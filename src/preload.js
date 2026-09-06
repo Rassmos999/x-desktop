@@ -121,61 +121,94 @@ function getCleanTweetText(textEl) {
 }
 
 function injectTranslateButtons() {
-  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  const tweets = document.querySelectorAll(article[data-testid=tweet]);
   tweets.forEach(tw => {
-    const textEl = tw.querySelector('[data-testid="tweetText"]');
-    if (!textEl || tw.querySelector('.x-desktop-translate-link') || tw.querySelector('.x-desktop-translation-inline')) return;
+    const textEl = tw.querySelector([data-testid=tweetText]);
+    if (!textEl || tw.querySelector(".x-desktop-translate-link") || tw.querySelector(".x-desktop-translation-inline")) return;
 
     const originalText = getCleanTweetText(textEl);
     if (originalText.length < 3 || hasArabic(originalText)) return;
 
-    const link = document.createElement('button');
-    link.className = 'x-desktop-translate-link';
-    link.innerHTML = 'ترجمة المنشور';
+    const link = document.createElement("button");
+    link.className = "x-desktop-translate-link";
+    link.innerHTML = "ترجمة المنشور";
 
     let translationBox = null;
-    let cachedTranslation = '';
+    let cachedTranslation = "";
 
-    link.addEventListener('click', async (e) => {
+    link.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
       if (cachedTranslation && translationBox) {
-        translationBox.style.display = 'block';
-        link.style.display = 'none';
+        translationBox.style.display = "block";
+        link.style.display = "none";
         return;
       }
 
-      link.innerHTML = 'جاري الترجمة بالذكاء الاصطناعي...';
+      link.innerHTML = "جاري الترجمة...";
       link.disabled = true;
 
       try {
-        const translated = await ipcRenderer.invoke('translate-text', originalText);
-        cachedTranslation = translated;
+        const res = await ipcRenderer.invoke("translate-text", { text: originalText, mode: "auto" });
+        const translatedText = typeof res === "object" ? res.text : res;
+        const isQwen = typeof res === "object" && res.engine === "qwen3";
+        cachedTranslation = translatedText;
 
-        translationBox = document.createElement('div');
-        translationBox.className = 'x-desktop-translation-inline';
+        translationBox = document.createElement("div");
+        translationBox.className = "x-desktop-translation-inline";
         translationBox.innerHTML = `
           <div class="x-desktop-translation-meta">
-            <span>ترجم بواسطة الذكاء الاصطناعي (Qwen3 · RTX 4060)</span>
-            <button class="x-desktop-show-original-link">عرض الأصل</button>
+            <span class="x-desktop-badge-text">${isQwen ? "🧠 صياغة Qwen3" : "ترجمة دقيقة"}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <button class="x-desktop-show-original-link x-desktop-rephrase-ai">${isQwen ? "⚡ ترجمة دقيقة" : "🧠 صياغة Qwen3"}</button>
+              <button class="x-desktop-show-original-link">عرض الأصل</button>
+            </div>
           </div>
-          <div class="x-desktop-translated-text">${formatArabicBiDi(translated)}</div>
+          <div class="x-desktop-translated-text">${formatArabicBiDi(translatedText)}</div>
         `;
 
-        const showOriginalBtn = translationBox.querySelector('.x-desktop-show-original-link');
-        showOriginalBtn.addEventListener('click', (ev) => {
+        const rephraseBtn = translationBox.querySelector(".x-desktop-rephrase-ai");
+        const showOriginalBtn = translationBox.querySelectorAll(".x-desktop-show-original-link")[1];
+        const textContainer = translationBox.querySelector(".x-desktop-translated-text");
+        const badgeText = translationBox.querySelector(".x-desktop-badge-text");
+
+        rephraseBtn.addEventListener("click", async (ev) => {
           ev.stopPropagation();
-          translationBox.style.display = 'none';
-          link.style.display = 'inline-block';
-          link.innerHTML = 'ترجمة المنشور';
+          rephraseBtn.disabled = true;
+          const currentMode = badgeText.textContent.includes("Qwen3") ? "auto" : "ai";
+          rephraseBtn.innerHTML = "⏳ جاري المعالجة...";
+
+          try {
+            const rephraseRes = await ipcRenderer.invoke("translate-text", { text: originalText, mode: currentMode });
+            const newText = typeof rephraseRes === "object" ? rephraseRes.text : rephraseRes;
+            textContainer.innerHTML = formatArabicBiDi(newText);
+            if (currentMode === "ai") {
+              badgeText.textContent = "🧠 صياغة Qwen3";
+              rephraseBtn.innerHTML = "⚡ ترجمة دقيقة";
+            } else {
+              badgeText.textContent = "ترجمة دقيقة";
+              rephraseBtn.innerHTML = "🧠 صياغة Qwen3";
+            }
+          } catch (err) {
+            rephraseBtn.innerHTML = "⚠️ خطأ";
+          } finally {
+            rephraseBtn.disabled = false;
+          }
+        });
+
+        showOriginalBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          translationBox.style.display = "none";
+          link.style.display = "inline-block";
+          link.innerHTML = "ترجمة المنشور";
           link.disabled = false;
         });
 
         textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
-        link.style.display = 'none';
+        link.style.display = "none";
       } catch (err) {
-        link.innerHTML = 'تعذرت الترجمة';
+        link.innerHTML = "تعذرت الترجمة";
         link.disabled = false;
       }
     });

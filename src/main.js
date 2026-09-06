@@ -57,8 +57,10 @@ let mainWindow = null;
 let tray = null;
 
 // Translation IPC Handlers via local AI Engine
-ipcMain.handle('translate-text', async (event, text) => {
-  return await aiEngine.translate(text, 'ar');
+ipcMain.handle('translate-text', async (event, arg) => {
+  const text = typeof arg === 'object' ? arg.text : arg;
+  const mode = typeof arg === 'object' ? (arg.mode || 'auto') : 'auto';
+  return await aiEngine.translate(text, mode);
 });
 
 ipcMain.handle('translate-image', async (event, { imageBase64, mimeType }) => {

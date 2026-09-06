@@ -13,13 +13,13 @@ const MMPROJ_PATH = path.join(MODELS_DIR, 'mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf'
 const SERVER_BIN = path.join(BIN_DIR, 'llama-server');
 const AI_PORT = 28491;
 
-const TRANSLATION_PROMPT = [
-  'You are a professional bilingual translator for technology, design, and social media.',
-  'Translate the English post into natural, punchy, modern Arabic.',
-  'Translate colloquial idioms naturally (e.g. "we are cooking" -> "نحن نجهّز" or "نعمل على إعداد", "stay tuned" -> "ترقبوا قريباً", "live" -> "متاح الآن/بدأ البث").',
-  'CRITICAL: Keep all website domains and URLs (e.g. grainient.supply, outmatch.lol), brand names, and @mentions strictly in English. Do not translate or modify them.',
-  'Output ONLY the final Arabic translation without quotes, alternatives, notes, or explanations.'
-].join('\n');
+function preprocessSlang(text) {
+  if (!text) return '';
+  return text
+    .replace(/\b(we\x27re|we are)\s+live\b/gi, "we are broadcasting live")
+    .replace(/\b(we\x27re|we are)\s+cooking\b/gi, "we are preparing")
+    .replace(/\bthat\x27s\s+so\s+([a-zA-Z0-9_]+)\b/gi, "that is typically $1");
+}
 
 class AIEngine {
   constructor() {
@@ -126,30 +126,26 @@ class AIEngine {
     };
   }
 
-  async translate(text, targetLang = 'ar') {
+  async translate(text, mode = 'auto') {
     if (!text || typeof text !== 'string' || !text.trim()) {
-      return '';
+      return { text: '', engine: 'none' };
     }
     const trimmed = text.trim();
-    const cacheKey = `${targetLang}:${trimmed}`;
+    const cacheKey = `${mode}:${trimmed}`;
     if (this.translationCache.has(cacheKey)) {
       return this.translationCache.get(cacheKey);
     }
 
     let result = '';
+    let usedEngine = 'web';
 
-    if (!this.isReady) {
-      this.isReady = await this.ping();
-      if (!this.isReady && !this.isStarting) {
-        this.startServer();
-      }
-    }
-
-    if (this.isReady) {
+    // If explicit AI mode requested, use local Qwen3 on GPU
+    if (mode === 'ai' && this.isReady) {
       try {
         const t0 = Date.now();
         result = await this.queryQwen(trimmed);
         const latency = Date.now() - t0;
+        usedEngine = 'qwen3';
 
         const inTokens = Math.round(trimmed.length / 3.8);
         const outTokens = Math.round((result?.length || 50) / 3.2);
@@ -163,23 +159,31 @@ class AIEngine {
           output: outTokens
         };
       } catch (err) {
-        console.warn('[X Desktop AI] Qwen inference notice:', err.message);
+        console.warn('[X Desktop AI] Qwen inference fallback:', err.message);
       }
     }
 
+    // High-precision human translation with slang pre-processing
     if (!result || result === trimmed) {
-      result = await this.fallbackWebTranslate(trimmed, targetLang);
+      const cleanInput = preprocessSlang(trimmed);
+      result = await this.fallbackWebTranslate(cleanInput, 'ar');
+      usedEngine = 'precise';
     }
+
+    const payload = {
+      text: result || trimmed,
+      engine: usedEngine
+    };
 
     if (result) {
       if (this.translationCache.size >= this.maxCache) {
         const firstKey = this.translationCache.keys().next().value;
         this.translationCache.delete(firstKey);
       }
-      this.translationCache.set(cacheKey, result);
+      this.translationCache.set(cacheKey, payload);
     }
 
-    return result || trimmed;
+    return payload;
   }
 
   async translateImage(imageBase64, mimeType = 'image/jpeg') {
@@ -254,7 +258,7 @@ class AIEngine {
       messages: [
         {
           role: 'system',
-          content: TRANSLATION_PROMPT
+          content: 'Translate the English text into natural, fluent Arabic. Keep proper names, @mentions, #hashtags, and links in English. Output ONLY the Arabic translation.'
         },
         {
           role: 'user',
@@ -262,10 +266,10 @@ class AIEngine {
         }
       ],
       temperature: 0.1,
-      frequency_penalty: 0.4,
-      presence_penalty: 0.2,
+      frequency_penalty: 0.6,
+      presence_penalty: 0.3,
       stop: ["\n\nملاحظة", "\n\nNote", "\n\n---", "Translation:", "ملاحظات:", "Note:"],
-      max_tokens: 512
+      max_tokens: 256
     });
 
     return this.postJson('/v1/chat/completions', payload, 15000).then(res => {
