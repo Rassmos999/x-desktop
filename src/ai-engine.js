@@ -25,8 +25,18 @@ class AIEngine {
     return fs.existsSync(MODEL_PATH) && fs.existsSync(SERVER_BIN);
   }
 
-  startServer() {
-    if (this.isReady || this.isStarting || !this.hasModel()) {
+  async startServer() {
+    if (this.isReady) return;
+
+    // Check if server is already running on port 28491
+    const alreadyRunning = await this.ping();
+    if (alreadyRunning) {
+      this.isReady = true;
+      console.log('✅ [X Desktop AI] Connected to running Qwen3 AI server on RTX 4060 GPU.');
+      return;
+    }
+
+    if (this.isStarting || !this.hasModel()) {
       return;
     }
 
@@ -45,21 +55,10 @@ class AIEngine {
     try {
       this.process = spawn(SERVER_BIN, args, {
         env: { ...process.env, LD_LIBRARY_PATH: BIN_DIR + (process.env.LD_LIBRARY_PATH ? ':' + process.env.LD_LIBRARY_PATH : '') },
-        detached: false,
+        detached: true,
         stdio: 'ignore'
       });
-
-      this.process.on('error', (err) => {
-        console.warn('[X Desktop AI] Failed to spawn llama-server:', err.message);
-        this.isReady = false;
-        this.isStarting = false;
-      });
-
-      this.process.on('exit', (code) => {
-        console.log('[X Desktop AI] llama-server exited with code:', code);
-        this.isReady = false;
-        this.isStarting = false;
-      });
+      this.process.unref();
 
       // Poll until ready
       const checkInterval = setInterval(async () => {
@@ -70,7 +69,7 @@ class AIEngine {
           this.isStarting = false;
           console.log('✅ [X Desktop AI] Qwen3-VL-2B loaded onto GPU. Ready for intelligent translation.');
         }
-      }, 500);
+      }, 400);
 
       setTimeout(() => clearInterval(checkInterval), 30000);
     } catch (e) {
@@ -101,6 +100,14 @@ class AIEngine {
 
     let result = '';
 
+    // Check if AI server is reachable or start it
+    if (!this.isReady) {
+      this.isReady = await this.ping();
+      if (!this.isReady && !this.isStarting) {
+        this.startServer();
+      }
+    }
+
     // 1. Try local Qwen3 AI model if server is ready
     if (this.isReady) {
       try {
@@ -110,7 +117,7 @@ class AIEngine {
       }
     }
 
-    // 2. Fallback to web translation if AI is starting or model not downloaded yet
+    // 2. Fallback to web translation if AI is starting or model not ready
     if (!result || result === trimmed) {
       result = await this.fallbackWebTranslate(trimmed, targetLang);
     }
