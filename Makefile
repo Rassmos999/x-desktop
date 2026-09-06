@@ -4,17 +4,18 @@
 # places app in resources/app, installs hicolor theme icons, .desktop file,
 # and creates launcher in ~/.local/bin.
 
-PREFIX  ?= $(HOME)/.local
-DESTDIR ?=
-VERSION ?= $(shell node -p "require('./package.json').version")
+PREFIX    ?= $(HOME)/.local
+DESTDIR   ?=
+VERSION   ?= $(shell node -p "require('./package.json').version")
 
-APP_ID  = x-desktop
-BIN     = x-desktop
+APP_ID    = x-desktop
+BIN       = x-desktop
 
 bindir       = $(PREFIX)/bin
 libdir       = $(PREFIX)/lib/$(BIN)
 appdir       = $(PREFIX)/share/applications
 icontheme    = $(PREFIX)/share/icons/hicolor
+pixmapdir    = $(PREFIX)/share/pixmaps
 
 ELECTRON   = node_modules/electron/dist
 ICON_SIZES = 16 22 24 32 48 64 128 256 512
@@ -56,14 +57,22 @@ install: $(ELECTRON)/electron icons
 	@chmod 755 $(DESTDIR)$(bindir)/$(BIN)
 	@install -d $(DESTDIR)$(appdir)
 	@install -m644 data/$(APP_ID).desktop $(DESTDIR)$(appdir)/$(APP_ID).desktop
+	@install -d $(DESTDIR)$(pixmapdir)
+	@install -m644 data/x-desktop.png $(DESTDIR)$(pixmapdir)/x-desktop.png
+	@install -m644 data/x-desktop.png $(DESTDIR)$(pixmapdir)/x.png
+	@install -d $(DESTDIR)$(icontheme)/scalable/apps
+	@install -m644 data/icons/hicolor/scalable/apps/x-desktop.svg $(DESTDIR)$(icontheme)/scalable/apps/x-desktop.svg
+	@install -m644 data/icons/hicolor/scalable/apps/x.svg $(DESTDIR)$(icontheme)/scalable/apps/x.svg
 	@for s in $(ICON_SIZES); do \
 	  install -d $(DESTDIR)$(icontheme)/$$s"x"$$s/apps; \
 	  if [ -f data/icons/hicolor/$$s"x"$$s/apps/$(APP_ID).png ]; then \
 	    install -m644 data/icons/hicolor/$$s"x"$$s/apps/$(APP_ID).png $(DESTDIR)$(icontheme)/$$s"x"$$s/apps/$(APP_ID).png; \
-	  elif [ -f data/icons/$$s"x"$$s.png ]; then \
-	    install -m644 data/icons/$$s"x"$$s.png $(DESTDIR)$(icontheme)/$$s"x"$$s/apps/$(APP_ID).png; \
+	    install -m644 data/icons/hicolor/$$s"x"$$s/apps/$(APP_ID).png $(DESTDIR)$(icontheme)/$$s"x"$$s/apps/x.png; \
 	  fi; \
 	done
+	@if [ ! -f $(DESTDIR)$(icontheme)/index.theme ]; then \
+	  printf '[Icon Theme]\nName=Hicolor\nComment=Fallback icon theme\nHidden=true\nDirectories=scalable/apps\n' > $(DESTDIR)$(icontheme)/index.theme; \
+	fi
 	@-update-desktop-database $(DESTDIR)$(appdir) 2>/dev/null || true
 	@-gtk-update-icon-cache -f -t $(DESTDIR)$(icontheme) 2>/dev/null || true
 	@echo "Installation complete! Run with: $(BIN)"
@@ -72,8 +81,10 @@ uninstall:
 	@echo "Uninstalling $(BIN)..."
 	@rm -rf $(DESTDIR)$(libdir)
 	@rm -f $(DESTDIR)$(bindir)/$(BIN) $(DESTDIR)$(appdir)/$(APP_ID).desktop
+	@rm -f $(DESTDIR)$(pixmapdir)/x-desktop.png $(DESTDIR)$(pixmapdir)/x.png
+	@rm -f $(DESTDIR)$(icontheme)/scalable/apps/x-desktop.svg $(DESTDIR)$(icontheme)/scalable/apps/x.svg
 	@for s in $(ICON_SIZES); do \
-	  rm -f $(DESTDIR)$(icontheme)/$$s"x"$$s/apps/$(APP_ID).png; \
+	  rm -f $(DESTDIR)$(icontheme)/$$s"x"$$s/apps/$(APP_ID).png $(DESTDIR)$(icontheme)/$$s"x"$$s/apps/x.png; \
 	done
 	@-update-desktop-database $(DESTDIR)$(appdir) 2>/dev/null || true
 	@-gtk-update-icon-cache -f -t $(DESTDIR)$(icontheme) 2>/dev/null || true

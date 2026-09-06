@@ -26,7 +26,6 @@ function injectStyles() {
 function scrubPromotedContent() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
-    // Check if tweet contains promoted indicators
     const isPromoted = 
       tw.querySelector('[data-testid="icon-promoted"]') ||
       tw.querySelector('span[dir="ltr"]:is(:has-text("Ad"), :has-text("مروّج"), :has-text("Promoted"))') ||
@@ -69,7 +68,7 @@ function setupMediaTracking() {
 function sendMprisUpdate(playbackStatus) {
   if (!activeMedia) return;
 
-  let title = 'X Media';
+  let title = 'X Media Playback';
   let artist = 'X (Twitter)';
   let artwork = '';
 
@@ -134,7 +133,6 @@ function injectPiPButtons() {
                       vid.parentElement;
     if (!container || container.querySelector('.x-desktop-pip-btn')) return;
 
-    // Ensure container has relative positioning
     if (window.getComputedStyle(container).position === 'static') {
       container.style.position = 'relative';
     }
@@ -174,7 +172,6 @@ function injectDownloadButtons() {
     const actionGroup = tw.querySelector('div[role="group"]');
     if (!actionGroup || actionGroup.querySelector('.x-desktop-download-btn')) return;
 
-    // Check if tweet has media (photos or video)
     const hasMedia = tw.querySelector('div[data-testid="tweetPhoto"]') || 
                      tw.querySelector('img[src*="pbs.twimg.com/media"]') ||
                      tw.querySelector('video');
@@ -219,11 +216,18 @@ function downloadTweetMedia(article) {
   const images = article.querySelectorAll('img[src*="pbs.twimg.com/media"]');
   const video = article.querySelector('video');
 
+  let authorHandle = 'x_media';
+  const userEl = article.querySelector('[data-testid="User-Name"]');
+  if (userEl) {
+    const text = userEl.innerText;
+    const match = text.match(/@([a-zA-Z0-9_]+)/);
+    if (match) authorHandle = match[1];
+  }
+
   let count = 0;
 
   images.forEach((img, idx) => {
     let src = img.src;
-    // Request original high resolution
     if (src.includes('name=')) {
       src = src.replace(/name=[a-zA-Z0-9_]+/, 'name=orig');
     } else {
@@ -232,7 +236,7 @@ function downloadTweetMedia(article) {
 
     ipcRenderer.send('download-url', {
       url: src,
-      filename: `x-media-${Date.now()}-${idx + 1}.jpg`
+      filename: `${authorHandle}-${Date.now()}-${idx + 1}.jpg`
     });
     count++;
   });
@@ -240,7 +244,7 @@ function downloadTweetMedia(article) {
   if (video && video.src) {
     ipcRenderer.send('download-url', {
       url: video.src,
-      filename: `x-video-${Date.now()}.mp4`
+      filename: `${authorHandle}-${Date.now()}.mp4`
     });
     count++;
   }
@@ -252,16 +256,43 @@ function downloadTweetMedia(article) {
   }
 }
 
-// 6. Keyboard Shortcuts
+// 6. Native Desktop Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
-  // Ctrl+N: Compose new tweet
-  if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'n') {
-    e.preventDefault();
-    const composeLink = document.querySelector('a[href="/compose/post"]') || document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
-    if (composeLink) {
-      composeLink.click();
-    } else {
-      window.location.href = 'https://x.com/compose/post';
+  if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+    // Ctrl+1: Home
+    if (e.key === '1') {
+      e.preventDefault();
+      window.location.href = 'https://x.com/home';
+    }
+    // Ctrl+2: Explore
+    else if (e.key === '2') {
+      e.preventDefault();
+      window.location.href = 'https://x.com/explore';
+    }
+    // Ctrl+3: Notifications
+    else if (e.key === '3') {
+      e.preventDefault();
+      window.location.href = 'https://x.com/notifications';
+    }
+    // Ctrl+4: Messages
+    else if (e.key === '4') {
+      e.preventDefault();
+      window.location.href = 'https://x.com/messages';
+    }
+    // Ctrl+5: Bookmarks
+    else if (e.key === '5') {
+      e.preventDefault();
+      window.location.href = 'https://x.com/i/bookmarks';
+    }
+    // Ctrl+N: Compose new tweet
+    else if (e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      const composeLink = document.querySelector('a[href="/compose/post"]') || document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
+      if (composeLink) {
+        composeLink.click();
+      } else {
+        window.location.href = 'https://x.com/compose/post';
+      }
     }
   }
 
@@ -276,6 +307,12 @@ window.addEventListener('keydown', (e) => {
         vid.requestPictureInPicture().catch(() => {});
       }
     }
+  }
+
+  // Ctrl+Shift+I: DevTools
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') {
+    e.preventDefault();
+    ipcRenderer.send('toggle-devtools');
   }
 });
 

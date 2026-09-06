@@ -1,5 +1,5 @@
 
-const { app, BrowserWindow, shell, ipcMain, session, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, session, Menu, MenuItem, Tray, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -9,10 +9,9 @@ const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, li
 
 app.userAgentFallback = CHROME_UA;
 
-// Prevent transient D-Bus / socket errors from terminating the application
+// Prevent transient D-Bus / socket disconnect notices from interrupting the app
 process.on('uncaughtException', (err) => {
-  if (err && (err.code === 'EPIPE' || err.code === 'ECONNRESET' || err.message?.includes("EPIPE") || err.message?.includes("stream is closed"))) {
-    console.warn('[X Desktop] Caught transient socket notice:', err.message);
+  if (err && (err.code === 'EPIPE' || err.code === 'ECONNRESET' || err.message?.includes('EPIPE') || err.message?.includes('stream is closed'))) {
     return;
   }
   console.error('[X Desktop] Uncaught exception:', err);
@@ -45,7 +44,7 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 // Single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
-  console.log('[X Desktop] Another instance is already running. Focusing existing window.');
+  console.log('[X Desktop] Another instance is already running. Forwarding focus.');
   app.quit();
 }
 
@@ -67,8 +66,8 @@ function getIconPath(name = 'x-desktop.png') {
 
 function createWindow(targetUrl = 'https://x.com') {
   mainWindow = new BrowserWindow({
-    width: 1300,
-    height: 860,
+    width: 1320,
+    height: 880,
     minWidth: 800,
     minHeight: 560,
     title: 'X',
@@ -81,7 +80,8 @@ function createWindow(targetUrl = 'https://x.com') {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: false,
       sandbox: false,
-      nodeIntegration: false
+      nodeIntegration: false,
+      spellcheck: true
     }
   });
 
@@ -115,6 +115,140 @@ function createWindow(targetUrl = 'https://x.com') {
       mainWindow.setTitle(title + ' / X');
     }
   });
+
+  // Native Context Menu (Right Click)
+  mainWindow.webContents.on('context-menu', (event, params) => {
+    const menu = new Menu();
+
+    if (params.linkURL) {
+      menu.append(new MenuItem({
+        label: 'Open Link in Default Browser',
+        click: () => shell.openExternal(params.linkURL)
+      }));
+      menu.append(new MenuItem({
+        label: 'Copy Link Address',
+        click: () => {
+          const { clipboard } = require('electron');
+          clipboard.writeText(params.linkURL);
+        }
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    if (params.hasImageContents && params.srcURL) {
+      menu.append(new MenuItem({
+        label: 'Save Image to Downloads',
+        click: () => {
+          mainWindow.webContents.downloadURL(params.srcURL);
+        }
+      }));
+      menu.append(new MenuItem({
+        label: 'Copy Image Address',
+        click: () => {
+          const { clipboard } = require('electron');
+          clipboard.writeText(params.srcURL);
+        }
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    if (params.selectionText) {
+      menu.append(new MenuItem({ role: 'copy' }));
+      menu.append(new MenuItem({
+        label: `Search X for "${params.selectionText.slice(0, 20)}..."`,
+        click: () => {
+          mainWindow.loadURL(`https://x.com/search?q=${encodeURIComponent(params.selectionText)}&f=live`);
+        }
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    if (params.isEditable) {
+      menu.append(new MenuItem({ role: 'undo' }));
+      menu.append(new MenuItem({ role: 'redo' }));
+      menu.append(new MenuItem({ type: 'separator' }));
+      menu.append(new MenuItem({ role: 'cut' }));
+      menu.append(new MenuItem({ role: 'copy' }));
+      menu.append(new MenuItem({ role: 'paste' }));
+      menu.append(new MenuItem({ role: 'selectAll' }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    menu.append(new MenuItem({
+      label: 'Back',
+      enabled: mainWindow.webContents.canGoBack(),
+      click: () => mainWindow.webContents.goBack()
+    }));
+    menu.append(new MenuItem({
+      label: 'Forward',
+      enabled: mainWindow.webContents.canGoForward(),
+      click: () => mainWindow.webContents.goForward()
+    }));
+    menu.append(new MenuItem({
+      label: 'Reload',
+      accelerator: 'CmdOrCtrl+R',
+      click: () => mainWindow.webContents.reload()
+    }));
+    menu.append(new MenuItem({ type: 'separator' }));
+    menu.append(new MenuItem({
+      label: 'Inspect Element',
+      accelerator: 'CmdOrCtrl+Shift+I',
+      click: () => mainWindow.webContents.toggleDevTools()
+    }));
+
+    menu.popup();
+  });
+
+  // Offline / Network Recovery Screen
+  mainWindow.webContents.on('did-fail-load', (e, errorCode, errorDescription, validatedURL) => {
+    if (errorCode === -3) return; // Ignore aborted requests
+    mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Connection Error - X Desktop</title>
+        <style>
+          body {
+            background-color: #000000;
+            color: #e2e8f0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+          }
+          .icon { width: 64px; height: 64px; fill: #ffffff; margin-bottom: 24px; }
+          h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+          p { color: #94a3b8; font-size: 14px; margin-bottom: 24px; text-align: center; max-width: 400px; }
+          .btn {
+            background-color: #1d9bf0;
+            color: #ffffff;
+            border: none;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background 0.2s;
+          }
+          .btn:hover { background-color: #1a8cd8; }
+        </style>
+      </head>
+      <body>
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+        <h1>Unable to Connect to X</h1>
+        <p>${errorDescription || 'Please verify your network connection.'}</p>
+        <button class="btn" onclick="window.location.href='${validatedURL || 'https://x.com'}'">Retry Connection</button>
+      </body>
+      </html>
+    `)}`);
+  });
 }
 
 function createTray() {
@@ -137,6 +271,7 @@ function createTray() {
     },
     {
       label: 'Compose Post...',
+      accelerator: 'CmdOrCtrl+N',
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -228,9 +363,15 @@ ipcMain.on('mpris-update', (event, state) => {
   updateMprisState(state);
 });
 
+// DevTools toggle from renderer
+ipcMain.on('toggle-devtools', () => {
+  if (mainWindow) {
+    mainWindow.webContents.toggleDevTools();
+  }
+});
+
 // App lifecycle
 app.whenReady().then(() => {
-  // Initialize D-Bus MPRIS Service
   initMpris((action, arg) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (action === 'raise') {
