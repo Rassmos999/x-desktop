@@ -37,8 +37,8 @@ console.log('👉 [3/6] Checking Preload and Styles...');
 const preloadCode = fs.readFileSync(path.join(ROOT, 'src', 'preload.js'), 'utf8');
 assert(preloadCode.includes('injectStyles'), 'injectStyles must exist in preload');
 assert(preloadCode.includes('setupMediaTracking'), 'setupMediaTracking must exist in preload');
-assert(preloadCode.includes('injectPiPButtons'), 'injectPiPButtons must exist in preload');
-assert(preloadCode.includes('injectDownloadButtons'), 'injectDownloadButtons must exist in preload');
+assert(preloadCode.includes("injectStyles"), "injectStyles must exist");
+assert(preloadCode.includes("zoom-in"), "zoom-in must exist");
 assert(preloadCode.includes('mpris-action'), 'mpris-action listener must exist');
 
 const cssCode = fs.readFileSync(path.join(ROOT, 'src', 'style.css'), 'utf8');

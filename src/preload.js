@@ -3,31 +3,48 @@ const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-// Strictly guard: only execute desktop enhancements on X/Twitter domains
+// Strictly guard: only execute on X/Twitter domains
 const isXDomain = window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com');
 if (!isXDomain) {
   return;
 }
 
-// 1. Mouse Wheel Zoom (Ctrl + Wheel Up: Zoom In, Ctrl + Wheel Down: Zoom Out)
+// 1. Mask broken WebGPU on Linux Wayland/NVIDIA so X falls back to 100% stable HTML5 video playback
+try {
+  delete Object.getPrototypeOf(navigator).gpu;
+} catch (e) {}
+try {
+  Object.defineProperty(Object.getPrototypeOf(navigator), 'gpu', {
+    get: () => undefined,
+    configurable: true
+  });
+} catch (e) {}
+try {
+  Object.defineProperty(navigator, 'gpu', {
+    get: () => undefined,
+    configurable: true
+  });
+} catch (e) {}
+
+// 2. Mouse Wheel Zoom in CAPTURE phase (Ctrl + Wheel Up: Zoom In, Ctrl + Wheel Down: Zoom Out)
 window.addEventListener('wheel', (e) => {
   if (e.ctrlKey) {
     e.preventDefault();
+    e.stopPropagation();
     if (e.deltaY < 0) {
       ipcRenderer.send('zoom-in');
     } else if (e.deltaY > 0) {
       ipcRenderer.send('zoom-out');
     }
   }
-}, { passive: false });
+}, { capture: true, passive: false });
 
-// 2. Intercept Link Clicks: Open external & t.co links in system default browser
+// 3. Intercept Link Clicks: Open external & t.co links in system default browser (Brave, Chrome)
 document.addEventListener('click', (event) => {
   const link = event.target.closest('a');
   if (!link || !link.href) return;
 
   const href = link.href;
-
   const isTco = href.includes('t.co/');
   let isExternal = false;
   try {
@@ -45,7 +62,7 @@ document.addEventListener('click', (event) => {
   }
 }, true);
 
-// 3. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
+// 4. Inject custom styles (Clean view, smooth scrollbar)
 function injectStyles() {
   try {
     const stylePath = path.join(__dirname, 'style.css');
@@ -62,21 +79,6 @@ function injectStyles() {
   } catch (err) {
     console.warn('[X Desktop] Error injecting custom styles:', err);
   }
-}
-
-// 4. Hide Promoted Tweets & Web Promotional Elements via MutationObserver
-function scrubPromotedContent() {
-  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
-  tweets.forEach(tw => {
-    const isPromoted = 
-      tw.querySelector('[data-testid="icon-promoted"]') ||
-      (tw.innerText && (tw.innerText.includes('Promoted') || tw.innerText.includes('مروّج') || tw.innerText.includes('إعلان مروّج')));
-
-    if (isPromoted && !tw.dataset.xScrubbed) {
-      tw.dataset.xScrubbed = 'true';
-      tw.style.display = 'none';
-    }
-  });
 }
 
 // 5. Media Tracking & MPRIS D-Bus Synchronization
@@ -165,175 +167,19 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 6. Picture-in-Picture (PiP) Enhancement
-function injectPiPButtons() {
-  const videos = document.querySelectorAll('video');
-  videos.forEach(vid => {
-    const container = vid.closest('div[data-testid="videoComponent"]') || 
-                      vid.closest('div[data-testid="videoPlayer"]') || 
-                      vid.parentElement;
-    if (!container || container.querySelector('.x-desktop-pip-btn')) return;
-
-    if (window.getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative';
-    }
-
-    const pipBtn = document.createElement('button');
-    pipBtn.className = 'x-desktop-pip-btn';
-    pipBtn.title = 'Picture-in-Picture (Ctrl+Shift+P)';
-    pipBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-        <rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor"></rect>
-      </svg>
-    `;
-
-    pipBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      try {
-        if (document.pictureInPictureElement === vid) {
-          await document.exitPictureInPicture();
-        } else {
-          await vid.requestPictureInPicture();
-        }
-      } catch (err) {
-        console.warn('[X Desktop] PiP request failed:', err);
-      }
-    });
-
-    container.appendChild(pipBtn);
-  });
-}
-
-// 7. Media Downloader Action Button in Tweets
-function injectDownloadButtons() {
-  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
-  tweets.forEach(tw => {
-    const actionGroup = tw.querySelector('div[role="group"]');
-    if (!actionGroup || actionGroup.querySelector('.x-desktop-download-btn')) return;
-
-    const hasMedia = tw.querySelector('div[data-testid="tweetPhoto"]') || 
-                     tw.querySelector('img[src*="pbs.twimg.com/media"]') ||
-                     tw.querySelector('video');
-
-    if (!hasMedia) return;
-
-    const btn = document.createElement('div');
-    btn.className = 'x-desktop-download-btn';
-    btn.title = 'تحميل الوسائط إلى ~/Downloads';
-    btn.innerHTML = `
-      <svg viewBox="0 0 24 24">
-        <path d="M12 15.586l4.293-4.293 1.414 1.414L12 18.414l-5.707-5.707 1.414-1.414L12 15.586zM11 2h2v12h-2V2zm-7 18h16v2H4v-2z"></path>
-      </svg>
-    `;
-
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      downloadTweetMedia(tw);
-    });
-
-    actionGroup.appendChild(btn);
-  });
-}
-
-function showToast(message) {
-  let toast = document.querySelector('.x-desktop-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.className = 'x-desktop-toast';
-    document.body.appendChild(toast);
-  }
-  toast.innerHTML = `<span>💾</span> <span>${message}</span>`;
-  setTimeout(() => {
-    if (toast && toast.parentElement) {
-      toast.parentElement.removeChild(toast);
-    }
-  }, 3500);
-}
-
-function downloadTweetMedia(article) {
-  const images = article.querySelectorAll('img[src*="pbs.twimg.com/media"]');
-  const video = article.querySelector('video');
-
-  let authorHandle = 'x_media';
-  const userEl = article.querySelector('[data-testid="User-Name"]');
-  if (userEl) {
-    const text = userEl.innerText;
-    const match = text.match(/@([a-zA-Z0-9_]+)/);
-    if (match) authorHandle = match[1];
-  }
-
-  let count = 0;
-
-  images.forEach((img, idx) => {
-    let src = img.src;
-    if (src.includes('name=')) {
-      src = src.replace(/name=[a-zA-Z0-9_]+/, 'name=orig');
-    } else {
-      src += src.includes('?') ? '&name=orig' : '?name=orig';
-    }
-
-    ipcRenderer.send('download-url', {
-      url: src,
-      filename: `${authorHandle}-${Date.now()}-${idx + 1}.jpg`
-    });
-    count++;
-  });
-
-  if (video && video.src) {
-    ipcRenderer.send('download-url', {
-      url: video.src,
-      filename: `${authorHandle}-${Date.now()}.mp4`
-    });
-    count++;
-  }
-
-  if (count > 0) {
-    showToast(`جاري تحميل ${count} ملف إلى مجلد Downloads...`);
-  } else {
-    showToast('لم يتم العثور على رابط مباشر للوسائط.');
-  }
-}
-
-// 8. Native Desktop Keyboard Shortcuts
+// 6. Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
-    // Ctrl+1: Home
-    if (e.key === '1') {
-      e.preventDefault();
-      window.location.href = 'https://x.com/home';
-    }
-    // Ctrl+2: Explore
-    else if (e.key === '2') {
-      e.preventDefault();
-      window.location.href = 'https://x.com/explore';
-    }
-    // Ctrl+3: Notifications
-    else if (e.key === '3') {
-      e.preventDefault();
-      window.location.href = 'https://x.com/notifications';
-    }
-    // Ctrl+4: Messages
-    else if (e.key === '4') {
-      e.preventDefault();
-      window.location.href = 'https://x.com/messages';
-    }
-    // Ctrl+5: Bookmarks
-    else if (e.key === '5') {
-      e.preventDefault();
-      window.location.href = 'https://x.com/i/bookmarks';
-    }
-    // Ctrl+N: Compose new tweet
+    if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
+    else if (e.key === '2') { e.preventDefault(); window.location.href = 'https://x.com/explore'; }
+    else if (e.key === '3') { e.preventDefault(); window.location.href = 'https://x.com/notifications'; }
+    else if (e.key === '4') { e.preventDefault(); window.location.href = 'https://x.com/messages'; }
+    else if (e.key === '5') { e.preventDefault(); window.location.href = 'https://x.com/i/bookmarks'; }
     else if (e.key.toLowerCase() === 'n') {
       e.preventDefault();
       const composeLink = document.querySelector('a[href="/compose/post"]') || document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
-      if (composeLink) {
-        composeLink.click();
-      } else {
-        window.location.href = 'https://x.com/compose/post';
-      }
+      if (composeLink) composeLink.click();
+      else window.location.href = 'https://x.com/compose/post';
     }
   }
 
@@ -357,25 +203,8 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Periodic and Mutation loop for DOM enhancements
-function runLoop() {
-  scrubPromotedContent();
-  injectPiPButtons();
-  injectDownloadButtons();
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   injectStyles();
   setupMediaTracking();
-  runLoop();
-
-  const observer = new MutationObserver(() => {
-    runLoop();
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
 });
 
