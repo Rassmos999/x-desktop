@@ -34,17 +34,14 @@ app.setAppUserModelId('x-desktop');
 const userDataPath = path.join(app.getPath('appData'), 'x-desktop');
 app.setPath('userData', userDataPath);
 
-// Sandbox compatibility and memory stability on Linux
+// Sandbox compatibility on Linux user namespaces
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu-sandbox');
 
-// Hardware acceleration & Wayland flags
+// Hardware acceleration & clean Wayland flags (No broken Vulkan/Vaapi on NVIDIA)
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
-app.commandLine.appendSwitch(
-  'enable-features',
-  'WaylandWindowDecorations,VaapiVideoDecoder'
-);
-app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox');
+app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
+app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox,Vulkan');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 // Single instance lock
@@ -56,6 +53,34 @@ if (!gotTheLock) {
 
 let mainWindow = null;
 let tray = null;
+
+// Zoom Management
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2.5;
+const ZOOM_STEP = 0.1;
+
+function zoomIn() {
+  if (!mainWindow) return;
+  const current = mainWindow.webContents.getZoomFactor();
+  const next = Math.min(MAX_ZOOM, parseFloat((current + ZOOM_STEP).toFixed(2)));
+  mainWindow.webContents.setZoomFactor(next);
+}
+
+function zoomOut() {
+  if (!mainWindow) return;
+  const current = mainWindow.webContents.getZoomFactor();
+  const next = Math.max(MIN_ZOOM, parseFloat((current - ZOOM_STEP).toFixed(2)));
+  mainWindow.webContents.setZoomFactor(next);
+}
+
+function zoomReset() {
+  if (!mainWindow) return;
+  mainWindow.webContents.setZoomFactor(1.0);
+}
+
+ipcMain.on('zoom-in', () => zoomIn());
+ipcMain.on('zoom-out', () => zoomOut());
+ipcMain.on('zoom-reset', () => zoomReset());
 
 // Determine if a URL is strictly internal to X (not an external redirect like t.co)
 function isInternalXUrl(url) {
@@ -135,10 +160,31 @@ function createWindow(targetUrl = 'https://x.com') {
     }
   }, 800);
 
+  // Global Keyboard Zoom Handler (Ctrl + =, Ctrl + -, Ctrl + 0)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.control && !input.alt && input.type === 'keyDown') {
+      // Zoom in with Ctrl + = (or Ctrl + + without needing Shift)
+      if (input.key === '=' || input.key === '+' || input.code === 'Equal' || input.code === 'NumpadAdd') {
+        event.preventDefault();
+        zoomIn();
+      }
+      // Zoom out with Ctrl + -
+      else if (input.key === '-' || input.key === '_' || input.code === 'Minus' || input.code === 'NumpadSubtract') {
+        event.preventDefault();
+        zoomOut();
+      }
+      // Reset zoom with Ctrl + 0
+      else if (input.key === '0' || input.code === 'Digit0' || input.code === 'Numpad0') {
+        event.preventDefault();
+        zoomReset();
+      }
+    }
+  });
+
   // Intercept all top-level navigations: If external or t.co, open in default browser!
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (isInternalXUrl(url) || isAuthServiceUrl(url)) {
-      return; // Allow internal navigation
+      return;
     }
     event.preventDefault();
     shell.openExternal(url);
@@ -146,7 +192,6 @@ function createWindow(targetUrl = 'https://x.com') {
 
   // Handle OAuth popups and window.open requests
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // 1. OAuth authentication popup (Google, Apple)
     if (isAuthServiceUrl(url)) {
       return {
         action: 'allow',
@@ -164,13 +209,11 @@ function createWindow(targetUrl = 'https://x.com') {
       };
     }
 
-    // 2. Internal X link opened in new window: navigate inside main window
     if (isInternalXUrl(url)) {
       mainWindow.loadURL(url);
       return { action: 'deny' };
     }
 
-    // 3. Any external link (including all t.co shortened links): Open in user's default browser!
     shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -254,6 +297,21 @@ function createWindow(targetUrl = 'https://x.com') {
       menu.append(new MenuItem({ role: 'selectAll' }));
       menu.append(new MenuItem({ type: 'separator' }));
     }
+
+    // Zoom Controls in Context Menu
+    menu.append(new MenuItem({
+      label: 'Zoom In (Ctrl + =)',
+      click: () => zoomIn()
+    }));
+    menu.append(new MenuItem({
+      label: 'Zoom Out (Ctrl + -)',
+      click: () => zoomOut()
+    }));
+    menu.append(new MenuItem({
+      label: 'Reset Zoom (Ctrl + 0)',
+      click: () => zoomReset()
+    }));
+    menu.append(new MenuItem({ type: 'separator' }));
 
     menu.append(new MenuItem({
       label: 'Back',

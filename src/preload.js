@@ -9,14 +9,25 @@ if (!isXDomain) {
   return;
 }
 
-// 1. Intercept Link Clicks: Open external & t.co links in system default browser (Brave, Chrome, etc.)
+// 1. Mouse Wheel Zoom (Ctrl + Wheel Up: Zoom In, Ctrl + Wheel Down: Zoom Out)
+window.addEventListener('wheel', (e) => {
+  if (e.ctrlKey) {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      ipcRenderer.send('zoom-in');
+    } else if (e.deltaY > 0) {
+      ipcRenderer.send('zoom-out');
+    }
+  }
+}, { passive: false });
+
+// 2. Intercept Link Clicks: Open external & t.co links in system default browser
 document.addEventListener('click', (event) => {
   const link = event.target.closest('a');
   if (!link || !link.href) return;
 
   const href = link.href;
 
-  // Check if link is a t.co redirect or an external non-X link
   const isTco = href.includes('t.co/');
   let isExternal = false;
   try {
@@ -34,7 +45,7 @@ document.addEventListener('click', (event) => {
   }
 }, true);
 
-// 2. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
+// 3. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
 function injectStyles() {
   try {
     const stylePath = path.join(__dirname, 'style.css');
@@ -53,7 +64,7 @@ function injectStyles() {
   }
 }
 
-// 3. Hide Promoted Tweets & Web Promotional Elements via MutationObserver
+// 4. Hide Promoted Tweets & Web Promotional Elements via MutationObserver
 function scrubPromotedContent() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
@@ -68,7 +79,7 @@ function scrubPromotedContent() {
   });
 }
 
-// 4. Media Tracking & MPRIS D-Bus Synchronization
+// 5. Media Tracking & MPRIS D-Bus Synchronization
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -154,7 +165,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 5. Picture-in-Picture (PiP) Enhancement
+// 6. Picture-in-Picture (PiP) Enhancement
 function injectPiPButtons() {
   const videos = document.querySelectorAll('video');
   videos.forEach(vid => {
@@ -195,7 +206,7 @@ function injectPiPButtons() {
   });
 }
 
-// 6. Media Downloader Action Button in Tweets
+// 7. Media Downloader Action Button in Tweets
 function injectDownloadButtons() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
@@ -286,7 +297,7 @@ function downloadTweetMedia(article) {
   }
 }
 
-// 7. Native Desktop Keyboard Shortcuts
+// 8. Native Desktop Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     // Ctrl+1: Home

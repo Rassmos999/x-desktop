@@ -53,7 +53,7 @@ install: $(ELECTRON)/electron icons
 	  rm -rf $(DESTDIR)$(libdir)/resources/app/node_modules/electron $(DESTDIR)$(libdir)/resources/app/node_modules/.bin/electron; \
 	fi
 	@install -d $(DESTDIR)$(bindir)
-	@printf '#!/bin/sh\nexec "%s/%s" --no-sandbox --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations,VaapiVideoDecoder "$$@"\n' "$(libdir)" "$(BIN)" > $(DESTDIR)$(bindir)/$(BIN)
+	@printf '#!/bin/sh\nexec "%s/%s" --no-sandbox --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations "$$@"\n' "$(libdir)" "$(BIN)" > $(DESTDIR)$(bindir)/$(BIN)
 	@chmod 755 $(DESTDIR)$(bindir)/$(BIN)
 	@install -d $(DESTDIR)$(appdir)
 	@install -m644 data/$(APP_ID).desktop $(DESTDIR)$(appdir)/$(APP_ID).desktop
