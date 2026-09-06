@@ -11,7 +11,7 @@ app.userAgentFallback = CHROME_UA;
 
 // Prevent transient D-Bus / socket errors from terminating the application
 process.on('uncaughtException', (err) => {
-  if (err && (err.code === 'EPIPE' || err.code === 'ECONNRESET' || err.message?.includes('EPIPE'))) {
+  if (err && (err.code === 'EPIPE' || err.code === 'ECONNRESET' || err.message?.includes("EPIPE") || err.message?.includes("stream is closed"))) {
     console.warn('[X Desktop] Caught transient socket notice:', err.message);
     return;
   }
