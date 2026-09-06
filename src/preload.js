@@ -85,19 +85,13 @@ function injectStyles() {
 function formatArabicBiDi(text) {
   if (!text) return '';
   
-  // Escape any raw HTML tags to prevent XSS
   let escaped = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // 1. Isolate Full URLs (https://, http://)
   escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
-
-  // 2. Isolate standalone web domains (e.g. outmatch.lol, github.com)
   escaped = escaped.replace(/(?<![\/\w])([a-zA-Z0-9-]+\.(?:com|org|net|lol|io|ai|app|co|tv|me|xyz|dev|edu)(?:\/[^\s<]*)?)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
-
-  // 3. Isolate @mentions
   escaped = escaped.replace(/(?<!\w)(@[a-zA-Z0-9_]{1,30})/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
 
   return escaped;
@@ -192,7 +186,80 @@ function injectTranslateButtons() {
   });
 }
 
-// 8. Promoted Tweet & "Ad" Label Scrubber (Ad-Blocker)
+// 8. Vision Image Translation Action in Tweets
+function injectImageTranslateButtons() {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(tw => {
+    const photoContainer = tw.querySelector('div[data-testid="tweetPhoto"]');
+    if (!photoContainer || tw.querySelector('.x-desktop-img-translate-btn')) return;
+
+    const img = photoContainer.querySelector('img[src*="twimg.com/media"]');
+    if (!img) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'x-desktop-img-translate-btn';
+    btn.innerHTML = '🖼️ ترجمة النص داخل الصورة (Qwen3-VL)';
+
+    let resultBox = null;
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      btn.innerHTML = '🔍 جاري فحص وترجمة الصورة بالذكاء الاصطناعي...';
+      btn.disabled = true;
+
+      try {
+        // Fetch image and convert to Base64
+        const resp = await fetch(img.src);
+        const blob = await resp.blob();
+        const reader = new FileReader();
+
+        reader.onload = async () => {
+          const base64Data = reader.result.split(',')[1];
+          const translation = await ipcRenderer.invoke('translate-image', {
+            imageBase64: base64Data,
+            mimeType: blob.type || 'image/jpeg'
+          });
+
+          if (!resultBox) {
+            resultBox = document.createElement('div');
+            resultBox.className = 'x-desktop-translation-inline';
+            photoContainer.parentNode.insertBefore(resultBox, photoContainer.nextSibling);
+          }
+
+          resultBox.innerHTML = `
+            <div class="x-desktop-translation-meta">
+              <span>ترجمة النصوص المستخرجة من الصورة (Qwen3-VL · RTX 4060)</span>
+              <button class="x-desktop-show-original-link">إخفاء</button>
+            </div>
+            <div class="x-desktop-translated-text">${formatArabicBiDi(translation)}</div>
+          `;
+
+          const hideBtn = resultBox.querySelector('.x-desktop-show-original-link');
+          hideBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            resultBox.style.display = 'none';
+            btn.innerHTML = '🖼️ ترجمة النص داخل الصورة (Qwen3-VL)';
+            btn.disabled = false;
+          });
+
+          btn.innerHTML = '👁️ إخفاء ترجمة الصورة';
+          btn.disabled = false;
+        };
+
+        reader.readAsDataURL(blob);
+      } catch (err) {
+        btn.innerHTML = '⚠️ تعذر فحص الصورة';
+        btn.disabled = false;
+      }
+    });
+
+    photoContainer.parentNode.insertBefore(btn, photoContainer.nextSibling);
+  });
+}
+
+// 9. Promoted Tweet & "Ad" Label Scrubber (Ad-Blocker)
 function isAdTweet(article) {
   if (article.querySelector('[data-testid="icon-promoted"]')) return true;
 
@@ -226,7 +293,7 @@ function scrubPromotedContent() {
   });
 }
 
-// 9. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
+// 10. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -315,7 +382,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 10. Keyboard Shortcuts
+// 11. Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
@@ -338,10 +405,11 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Periodic & Mutation Loop for translation and ad cleaning
+// Periodic & Mutation Loop for translation, vision, and ad cleaning
 function runLoop() {
   scrubPromotedContent();
   injectTranslateButtons();
+  injectImageTranslateButtons();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

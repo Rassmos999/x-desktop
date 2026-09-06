@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const { initMpris, updateMprisState } = require('./mpris');
 const { aiEngine } = require('./ai-engine');
+const { startWebUiServer, WEB_UI_PORT } = require('./web-ui');
 
 if (process.argv.includes('--version') || process.argv.includes('-v')) {
   try {
@@ -55,15 +56,20 @@ if (!gotTheLock) {
 let mainWindow = null;
 let tray = null;
 
-// Translation IPC Handler via local AI Engine (with web fallback)
+// Translation IPC Handlers via local AI Engine
 ipcMain.handle('translate-text', async (event, text) => {
   return await aiEngine.translate(text, 'ar');
+});
+
+ipcMain.handle('translate-image', async (event, { imageBase64, mimeType }) => {
+  return await aiEngine.translateImage(imageBase64, mimeType);
 });
 
 ipcMain.handle('get-ai-status', () => {
   return {
     isReady: aiEngine.isReady,
-    hasModel: aiEngine.hasModel()
+    hasModel: aiEngine.hasModel(),
+    hasVision: aiEngine.hasVision()
   };
 });
 
@@ -187,16 +193,26 @@ function createWindow(targetUrl = 'https://x.com') {
     }
   }, 800);
 
-  // Global Keyboard Zoom Handler (Ctrl + =, Ctrl + -, Ctrl + 0)
+  // Global Keyboard Zoom & Dashboard Handlers
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.control && !input.alt && input.type === 'keyDown') {
-      if (input.key === '=' || input.key === '+' || input.code === 'Equal' || input.code === 'NumpadAdd') {
+      // Open Web UI Dashboard: Ctrl + Shift + D
+      if (input.shift && input.code === 'KeyD') {
+        event.preventDefault();
+        shell.openExternal(`http://localhost:${WEB_UI_PORT}`);
+      }
+      // Zoom in with Ctrl + = (or Ctrl + + without needing Shift)
+      else if (input.key === '=' || input.key === '+' || input.code === 'Equal' || input.code === 'NumpadAdd') {
         event.preventDefault();
         zoomIn();
-      } else if (input.key === '-' || input.key === '_' || input.code === 'Minus' || input.code === 'NumpadSubtract') {
+      }
+      // Zoom out with Ctrl + -
+      else if (input.key === '-' || input.key === '_' || input.code === 'Minus' || input.code === 'NumpadSubtract') {
         event.preventDefault();
         zoomOut();
-      } else if (input.key === '0' || input.code === 'Digit0' || input.code === 'Numpad0') {
+      }
+      // Reset zoom with Ctrl + 0
+      else if (input.key === '0' || input.code === 'Digit0' || input.code === 'Numpad0') {
         event.preventDefault();
         zoomReset();
       }
@@ -265,6 +281,14 @@ function createWindow(targetUrl = 'https://x.com') {
   // Native Context Menu (Right Click)
   mainWindow.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
+
+    // AI Dashboard Link
+    menu.append(new MenuItem({
+      label: '📊 فتح لوحة تحكم الذكاء الاصطناعي (Web UI)',
+      accelerator: 'CmdOrCtrl+Shift+D',
+      click: () => shell.openExternal(`http://localhost:${WEB_UI_PORT}`)
+    }));
+    menu.append(new MenuItem({ type: 'separator' }));
 
     if (params.selectionText) {
       menu.append(new MenuItem({
@@ -438,6 +462,10 @@ function createTray() {
       click: () => showAndFocusWindow()
     },
     {
+      label: 'AI Web Dashboard (لوحة التحكم)',
+      click: () => shell.openExternal(`http://localhost:${WEB_UI_PORT}`)
+    },
+    {
       label: 'Compose Post...',
       accelerator: 'CmdOrCtrl+N',
       click: () => {
@@ -505,6 +533,35 @@ ipcMain.on('open-external-url', (event, url) => {
   }
 });
 
+// Media Downloader handler
+ipcMain.on('download-url', (event, { url, filename }) => {
+  if (!url || !mainWindow) return;
+
+  const downloadsDir = path.join(os.homedir(), 'Downloads');
+  if (!fs.existsSync(downloadsDir)) {
+    fs.mkdirSync(downloadsDir, { recursive: true });
+  }
+
+  const destPath = path.join(downloadsDir, filename);
+
+  mainWindow.webContents.session.downloadURL(url);
+  mainWindow.webContents.session.once('will-download', (e, item) => {
+    item.setSavePath(destPath);
+    item.once('done', (e, state) => {
+      if (state === 'completed') {
+        console.log('[X Desktop] Download completed:', destPath);
+      } else {
+        console.warn('[X Desktop] Download failed:', state);
+      }
+    });
+  });
+});
+
+// MPRIS updates from preload
+ipcMain.on('mpris-update', (event, state) => {
+  updateMprisState(state);
+});
+
 // DevTools toggle from renderer
 ipcMain.on('toggle-devtools', () => {
   if (mainWindow) {
@@ -514,8 +571,11 @@ ipcMain.on('toggle-devtools', () => {
 
 // App lifecycle
 app.whenReady().then(() => {
-  // Start local AI server on RTX 4060 GPU if model is present
+  // Start local AI server on RTX 4060 GPU
   aiEngine.startServer();
+
+  // Start Web UI Dashboard server on port 28492
+  startWebUiServer();
 
   // Activate Network-Level Ad & Analytics Blocker
   session.defaultSession.webRequest.onBeforeRequest({ urls: AD_TRACKER_PATTERNS }, (details, callback) => {
