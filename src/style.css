@@ -35,10 +35,7 @@ div[data-testid="inline-banner"] {
 }
 
 /* 3. Hide Promoted Tweets & Ad Placements */
-div[data-testid="placementTracking"],
-article[data-testid="tweet"]:has([data-testid="icon-promoted"]),
-article[data-testid="tweet"]:has(span:has-text("Ad")),
-article[data-testid="tweet"]:has(span:has-text("مروّج")) {
+div[data-testid="placementTracking"] {
   display: none !important;
 }
 

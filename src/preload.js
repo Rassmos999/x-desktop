@@ -3,6 +3,13 @@ const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
+// Strictly guard: only execute desktop enhancements on X/Twitter domains
+const isXDomain = window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com');
+if (!isXDomain) {
+  // Do not inject X-specific scripts or styles into OAuth pages (Google, Apple)
+  return;
+}
+
 // 1. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
 function injectStyles() {
   try {
@@ -28,7 +35,6 @@ function scrubPromotedContent() {
   tweets.forEach(tw => {
     const isPromoted = 
       tw.querySelector('[data-testid="icon-promoted"]') ||
-      tw.querySelector('span[dir="ltr"]:is(:has-text("Ad"), :has-text("مروّج"), :has-text("Promoted"))') ||
       (tw.innerText && (tw.innerText.includes('Promoted') || tw.innerText.includes('مروّج') || tw.innerText.includes('إعلان مروّج')));
 
     if (isPromoted && !tw.dataset.xScrubbed) {

@@ -16,8 +16,6 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
 }
 
 const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-const FIREFOX_UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0';
-
 app.userAgentFallback = CHROME_UA;
 
 // Prevent transient D-Bus / socket disconnect notices from interrupting the app
@@ -39,7 +37,6 @@ app.setPath('userData', userDataPath);
 // Sandbox compatibility and memory stability on Linux
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu-sandbox');
-app.commandLine.appendSwitch('disable-dev-shm-usage');
 
 // Hardware acceleration & Wayland flags
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
@@ -148,10 +145,31 @@ function createWindow(targetUrl = 'https://x.com') {
 
   // Handle OAuth popups and navigation
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // 1. Allow native modal popup for OAuth flows (Google, Apple)
+    if (url.includes('accounts.google.com') || url.includes('appleid.apple.com')) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 520,
+          height: 680,
+          autoHideMenuBar: true,
+          title: 'Sign In',
+          backgroundColor: '#ffffff',
+          webPreferences: {
+            sandbox: false,
+            contextIsolation: true
+          }
+        }
+      };
+    }
+
+    // 2. Allowed internal X navigation
     if (isAllowedDomain(url)) {
       mainWindow.loadURL(url);
       return { action: 'deny' };
     }
+
+    // 3. External links open in default browser
     shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -169,7 +187,7 @@ function createWindow(targetUrl = 'https://x.com') {
     }
   });
 
-  // Context Menu
+  // Native Context Menu (Right Click)
   mainWindow.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
 
@@ -243,6 +261,10 @@ function createWindow(targetUrl = 'https://x.com') {
       click: () => mainWindow.webContents.reload()
     }));
     menu.append(new MenuItem({ type: 'separator' }));
+    menu.append(new MenuItem({
+      label: 'Home (X)',
+      click: () => mainWindow.loadURL('https://x.com/home')
+    }));
     menu.append(new MenuItem({
       label: 'Inspect Element',
       accelerator: 'CmdOrCtrl+Shift+I',
@@ -416,27 +438,6 @@ ipcMain.on('toggle-devtools', () => {
 
 // App lifecycle
 app.whenReady().then(() => {
-  // Bypass Google OAuth "This browser or app may not be secure" block
-  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    const url = details.url;
-    if (
-      url.includes('google.com') ||
-      url.includes('accounts.google') ||
-      url.includes('gstatic.com') ||
-      url.includes('googleapis.com') ||
-      url.includes('googleusercontent.com')
-    ) {
-      details.requestHeaders['User-Agent'] = FIREFOX_UA;
-      delete details.requestHeaders['Sec-CH-UA'];
-      delete details.requestHeaders['Sec-CH-UA-Mobile'];
-      delete details.requestHeaders['Sec-CH-UA-Platform'];
-      delete details.requestHeaders['X-Electron'];
-    } else {
-      details.requestHeaders['User-Agent'] = CHROME_UA;
-    }
-    callback({ cancel: false, requestHeaders: details.requestHeaders });
-  });
-
   initMpris((action, arg) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (action === 'raise') {
