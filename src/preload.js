@@ -215,12 +215,32 @@ function injectImageTranslateButtons() {
         const blob = await resp.blob();
         const reader = new FileReader();
 
-        reader.onload = async () => {
-          const base64Data = reader.result.split(',')[1];
-          const translation = await ipcRenderer.invoke('translate-image', {
-            imageBase64: base64Data,
-            mimeType: blob.type || 'image/jpeg'
-          });
+        reader.onload = () => {
+          const imgObj = new Image();
+          imgObj.onload = async () => {
+            const maxDim = 1280;
+            let w = imgObj.width;
+            let h = imgObj.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            const c = document.createElement("canvas");
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext("2d");
+            ctx.drawImage(imgObj, 0, 0, w, h);
+            const base64Data = c.toDataURL("image/jpeg", 0.88).split(",")[1];
+
+            const translation = await ipcRenderer.invoke("translate-image", {
+              imageBase64: base64Data,
+              mimeType: "image/jpeg"
+            });
 
           if (!resultBox) {
             resultBox = document.createElement('div');
@@ -248,7 +268,7 @@ function injectImageTranslateButtons() {
           btn.disabled = false;
         };
 
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(blob); };
       } catch (err) {
         btn.innerHTML = '⚠️ تعذر فحص الصورة';
         btn.disabled = false;

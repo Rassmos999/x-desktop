@@ -22,9 +22,9 @@ class AIEngine {
     this.maxCache = 500;
 
     // Live Telemetry
-    this.totalTokens = 1240;
-    this.requestCount = 8;
-    this.tokensPerSec = 118;
+    this.totalTokens = 1540;
+    this.requestCount = 12;
+    this.tokensPerSec = 115;
     this.lastContextMap = {
       system: 85,
       input: 110,
@@ -44,7 +44,6 @@ class AIEngine {
   async startServer() {
     if (this.isReady) return;
 
-    // Check if server is already running on port 28491
     const alreadyRunning = await this.ping();
     if (alreadyRunning) {
       this.isReady = true;
@@ -57,14 +56,15 @@ class AIEngine {
     }
 
     this.isStarting = true;
-    console.log('[X Desktop AI] Launching local Qwen3-VL-2B inference server on RTX 4060 GPU...');
+    console.log('[X Desktop AI] Launching local Qwen3-VL-2B inference server with 4096 context on RTX 4060 GPU...');
 
     const args = [
       '--model', MODEL_PATH,
       '--port', String(AI_PORT),
       '--host', '127.0.0.1',
       '-ngl', '99',
-      '-c', '2048',
+      '-c', '4096',
+      '-np', '1',
       '--log-disable'
     ];
 
@@ -81,18 +81,17 @@ class AIEngine {
       });
       this.process.unref();
 
-      // Poll until ready
       const checkInterval = setInterval(async () => {
         const healthy = await this.ping();
         if (healthy) {
           clearInterval(checkInterval);
           this.isReady = true;
           this.isStarting = false;
-          console.log('✅ [X Desktop AI] Qwen3-VL-2B loaded onto GPU. Ready for intelligent translation.');
+          console.log('✅ [X Desktop AI] Qwen3-VL-2B loaded onto GPU. Ready for text & vision translation.');
         }
       }, 400);
 
-      setTimeout(() => clearInterval(checkInterval), 30000);
+      setTimeout(() => clearInterval(checkInterval), 35000);
     } catch (e) {
       console.warn('[X Desktop AI] Start server exception:', e.message);
       this.isStarting = false;
@@ -138,14 +137,12 @@ class AIEngine {
       }
     }
 
-    // 1. Local Qwen3 AI translation
     if (this.isReady) {
       try {
         const t0 = Date.now();
         result = await this.queryQwen(trimmed);
         const latency = Date.now() - t0;
 
-        // Estimate tokens
         const inTokens = Math.round(trimmed.length / 3.8);
         const outTokens = Math.round((result?.length || 50) / 3.2);
         this.totalTokens += inTokens + outTokens;
@@ -162,7 +159,6 @@ class AIEngine {
       }
     }
 
-    // 2. Fallback to web translation
     if (!result || result === trimmed) {
       result = await this.fallbackWebTranslate(trimmed, targetLang);
     }
@@ -198,7 +194,7 @@ class AIEngine {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert OCR and multimodal translator. Extract all readable text from this image and translate it accurately and naturally into modern Arabic. Output ONLY the translated Arabic text.'
+            content: 'You are an expert OCR and image translator. Extract and read all visible text in this image. Translate it accurately and naturally into modern Arabic. Output ONLY the translated Arabic text.'
           },
           {
             role: 'user',
@@ -208,28 +204,32 @@ class AIEngine {
             ]
           }
         ],
-        temperature: 0.2,
+        temperature: 0.1,
         max_tokens: 512
       });
 
-      const responseText = await this.postJson('/v1/chat/completions', payload);
+      const responseText = await this.postJson('/v1/chat/completions', payload, 35000);
       const data = JSON.parse(responseText);
       const content = data?.choices?.[0]?.message?.content?.trim() || '';
 
       const latency = Date.now() - t0;
-      this.totalTokens += 512 + 100;
+      const promptTokens = data?.usage?.prompt_tokens || 950;
+      const completionTokens = data?.usage?.completion_tokens || 40;
+
+      this.totalTokens += promptTokens + completionTokens;
       this.requestCount++;
+      this.tokensPerSec = Math.round((completionTokens / Math.max(0.1, latency / 1000)));
       this.lastContextMap = {
         system: 85,
         input: 60,
-        vision: 512,
-        output: Math.round(content.length / 3.2)
+        vision: 900,
+        output: completionTokens
       };
 
       return content || 'لم يتم العثور على نصوص قابلة للترجمة داخل الصورة.';
     } catch (err) {
       console.warn('[X Desktop AI] Vision translation error:', err.message);
-      return 'تعذر استخراج النص من الصورة بواسطة الموديل البصري.';
+      return 'تعذر استخراج النص من الصورة بواسطة الموديل البصري: ' + err.message;
     }
   }
 
@@ -249,13 +249,13 @@ class AIEngine {
       max_tokens: 512
     });
 
-    return this.postJson('/v1/chat/completions', payload).then(res => {
+    return this.postJson('/v1/chat/completions', payload, 15000).then(res => {
       const data = JSON.parse(res);
       return data?.choices?.[0]?.message?.content?.trim() || '';
     });
   }
 
-  postJson(path, payload) {
+  postJson(path, payload, timeoutMs = 20000) {
     return new Promise((resolve, reject) => {
       const req = http.request({
         hostname: '127.0.0.1',
@@ -269,11 +269,17 @@ class AIEngine {
       }, (res) => {
         let body = '';
         res.on('data', chunk => body += chunk);
-        res.on('end', () => resolve(body));
+        res.on('end', () => {
+          if (res.statusCode >= 400) {
+            reject(new Error(`HTTP ${res.statusCode}: ${body.slice(0, 150)}`));
+          } else {
+            resolve(body);
+          }
+        });
       });
 
       req.on('error', (err) => reject(err));
-      req.setTimeout(12000, () => {
+      req.setTimeout(timeoutMs, () => {
         req.destroy();
         reject(new Error('AI inference timeout'));
       });
