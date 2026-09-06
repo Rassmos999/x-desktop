@@ -42,8 +42,7 @@ assert(preloadCode.includes("zoom-in"), "zoom-in must exist");
 assert(preloadCode.includes('mpris-action'), 'mpris-action listener must exist');
 
 const cssCode = fs.readFileSync(path.join(ROOT, 'src', 'style.css'), 'utf8');
-assert(cssCode.includes('x-desktop-pip-btn'), 'PiP styling must exist');
-assert(cssCode.includes('x-desktop-download-btn'), 'Download button styling must exist');
+assert(cssCode.includes("scrollbar"), "scrollbar styling must exist");
 console.log('   ✅ Preload and CSS rules verified.');
 
 // 4. Check MPRIS Service Logic

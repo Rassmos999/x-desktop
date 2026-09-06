@@ -62,7 +62,7 @@ document.addEventListener('click', (event) => {
   }
 }, true);
 
-// 4. Inject custom styles (Clean view, smooth scrollbar)
+// 4. Inject clean styles (smooth scrollbars)
 function injectStyles() {
   try {
     const stylePath = path.join(__dirname, 'style.css');
@@ -81,7 +81,7 @@ function injectStyles() {
   }
 }
 
-// 5. Media Tracking & MPRIS D-Bus Synchronization
+// 5. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only - Never overwrite video element properties)
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -90,20 +90,24 @@ function setupMediaTracking() {
     if (target && (target.tagName === 'VIDEO' || target.tagName === 'AUDIO')) {
       activeMedia = target;
       sendMprisUpdate('Playing');
-
-      target.onpause = () => sendMprisUpdate('Paused');
-      target.onended = () => sendMprisUpdate('Stopped');
-      target.ontimeupdate = () => {
-        if (!target.paused) {
-          ipcRenderer.send('mpris-position', target.currentTime);
-        }
-      };
     }
   }, true);
 
   document.addEventListener('pause', (event) => {
     if (event.target === activeMedia) {
       sendMprisUpdate('Paused');
+    }
+  }, true);
+
+  document.addEventListener('ended', (event) => {
+    if (event.target === activeMedia) {
+      sendMprisUpdate('Stopped');
+    }
+  }, true);
+
+  document.addEventListener('timeupdate', (event) => {
+    if (event.target === activeMedia && !activeMedia.paused) {
+      ipcRenderer.send('mpris-position', activeMedia.currentTime);
     }
   }, true);
 }
@@ -150,9 +154,9 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   if (!activeMedia) return;
 
   if (action === 'playpause') {
-    activeMedia.paused ? activeMedia.play() : activeMedia.pause();
+    activeMedia.paused ? activeMedia.play().catch(() => {}) : activeMedia.pause();
   } else if (action === 'play') {
-    activeMedia.play();
+    activeMedia.play().catch(() => {});
   } else if (action === 'pause') {
     activeMedia.pause();
   } else if (action === 'stop') {
@@ -167,7 +171,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 6. Keyboard Shortcuts
+// 6. Native Desktop Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
