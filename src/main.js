@@ -42,11 +42,8 @@ app.commandLine.appendSwitch('disable-gpu-sandbox');
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 app.commandLine.appendSwitch(
   'enable-features',
-  'WaylandWindowDecorations,VaapiVideoDecoder,CanvasOopRasterization,ZeroCopy'
+  'WaylandWindowDecorations,VaapiVideoDecoder'
 );
-app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-zero-copy');
-app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
