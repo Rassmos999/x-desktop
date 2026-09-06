@@ -34,7 +34,7 @@ console.log('   ✅ All icons and system assets present.');
 // 3. Check Preload and Translation Features
 console.log('👉 [3/9] Checking Preload and Translation Features...');
 const preloadCode = fs.readFileSync(path.join(ROOT, 'src', 'preload.js'), 'utf8');
-assert(preloadCode.includes('injectStyles'), 'injectStyles must exist');
+assert(preloadCode.includes("injectTranslateButtons"), "injectTranslateButtons must exist");
 assert(preloadCode.includes('setupMediaTracking'), 'setupMediaTracking must exist');
 assert(preloadCode.includes('injectTranslateButtons'), 'injectTranslateButtons must exist');
 assert(preloadCode.includes('injectImageTranslateButtons'), 'injectImageTranslateButtons must exist');

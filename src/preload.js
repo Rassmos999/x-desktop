@@ -1,7 +1,5 @@
 
 const { ipcRenderer } = require('electron');
-const fs = require('fs');
-const path = require('path');
 
 // Strictly guard: only execute on X/Twitter domains
 const isXDomain = window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com');
@@ -62,42 +60,25 @@ document.addEventListener('click', (event) => {
   }
 }, true);
 
-// 4. Inject custom styles (Clean view, translation styling, smooth scrollbar)
-function injectStyles() {
-  try {
-    const stylePath = path.join(__dirname, 'style.css');
-    if (fs.existsSync(stylePath)) {
-      const css = fs.readFileSync(stylePath, 'utf8');
-      let styleEl = document.getElementById('x-desktop-custom-styles');
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'x-desktop-custom-styles';
-        (document.head || document.documentElement).appendChild(styleEl);
-      }
-      styleEl.textContent = css;
-    }
-  } catch (err) {
-    console.warn('[X Desktop] Error injecting custom styles:', err);
-  }
-}
-
-// 5. BiDi Formatter: Isolate URLs, domains, and @mentions from RTL text flipping
+// 4. BiDi Formatter: Isolate URLs, domains, and @mentions from RTL text flipping
 function formatArabicBiDi(text) {
   if (!text) return '';
   
-  let escaped = text
+  let cleanText = text.replace(/\s*\/\/\s*:\s*https?\s*/g, ' ');
+
+  let escaped = cleanText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
   escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
-  escaped = escaped.replace(/(?<![\/\w])([a-zA-Z0-9-]+\.(?:com|org|net|lol|io|ai|app|co|tv|me|xyz|dev|edu)(?:\/[^\s<]*)?)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
+  escaped = escaped.replace(/(?<![\/\w])([a-zA-Z0-9-]+\.[a-zA-Z]{2,16}(?:\/[^\s<]*)?)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
   escaped = escaped.replace(/(?<!\w)(@[a-zA-Z0-9_]{1,30})/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
 
   return escaped;
 }
 
-// 6. Toast Notification for Context-Menu Translations
+// 5. Toast Notification for Context-Menu Translations
 function showToast(message) {
   let toast = document.querySelector('.x-desktop-toast');
   if (!toast) {
@@ -117,9 +98,26 @@ ipcRenderer.on('show-toast-message', (e, msg) => {
   showToast(msg);
 });
 
-// 7. Native In-Place Arabic Translation for Foreign Tweets
+// 6. Native In-Place Arabic Translation for Foreign Tweets
 function hasArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
+}
+
+function getCleanTweetText(textEl) {
+  if (!textEl) return '';
+  try {
+    const clone = textEl.cloneNode(true);
+    const links = clone.querySelectorAll('a');
+    links.forEach(a => {
+      let linkText = a.textContent ? a.textContent.trim().replace(/\s+/g, '') : '';
+      const textNode = document.createTextNode(' ' + linkText + ' ');
+      if (a.parentNode) a.parentNode.replaceChild(textNode, a);
+    });
+    let clean = (clone.innerText || clone.textContent || '').replace(/\s*\/\/\s*:\s*https?/g, '').trim();
+    return clean;
+  } catch (e) {
+    return textEl.innerText ? textEl.innerText.trim() : '';
+  }
 }
 
 function injectTranslateButtons() {
@@ -129,7 +127,7 @@ function injectTranslateButtons() {
     if (!textEl || tw.querySelector('.x-desktop-translate-link') || tw.querySelector('.x-desktop-translation-inline')) return;
 
     const originalText = getCleanTweetText(textEl);
-    if (originalText.length < 5 || hasArabic(originalText)) return;
+    if (originalText.length < 3 || hasArabic(originalText)) return;
 
     const link = document.createElement('button');
     link.className = 'x-desktop-translate-link';
@@ -186,7 +184,7 @@ function injectTranslateButtons() {
   });
 }
 
-// 8. Vision Image Translation Action in Tweets
+// 7. Vision Image Translation Action in Tweets
 function injectImageTranslateButtons() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
@@ -210,7 +208,6 @@ function injectImageTranslateButtons() {
       btn.disabled = true;
 
       try {
-        // Fetch image and convert to Base64
         const resp = await fetch(img.src);
         const blob = await resp.blob();
         const reader = new FileReader();
@@ -230,45 +227,47 @@ function injectImageTranslateButtons() {
                 h = maxDim;
               }
             }
-            const c = document.createElement("canvas");
+            const c = document.createElement('canvas');
             c.width = w;
             c.height = h;
-            const ctx = c.getContext("2d");
+            const ctx = c.getContext('2d');
             ctx.drawImage(imgObj, 0, 0, w, h);
-            const base64Data = c.toDataURL("image/jpeg", 0.88).split(",")[1];
+            const base64Data = c.toDataURL('image/jpeg', 0.88).split(',')[1];
 
-            const translation = await ipcRenderer.invoke("translate-image", {
+            const translation = await ipcRenderer.invoke('translate-image', {
               imageBase64: base64Data,
-              mimeType: "image/jpeg"
+              mimeType: 'image/jpeg'
             });
 
-          if (!resultBox) {
-            resultBox = document.createElement('div');
-            resultBox.className = 'x-desktop-translation-inline';
-            photoContainer.parentNode.insertBefore(resultBox, photoContainer.nextSibling);
-          }
+            if (!resultBox) {
+              resultBox = document.createElement('div');
+              resultBox.className = 'x-desktop-translation-inline';
+              photoContainer.parentNode.insertBefore(resultBox, photoContainer.nextSibling);
+            }
 
-          resultBox.innerHTML = `
-            <div class="x-desktop-translation-meta">
-              <span>ترجمة النصوص المستخرجة من الصورة (Qwen3-VL · RTX 4060)</span>
-              <button class="x-desktop-show-original-link">إخفاء</button>
-            </div>
-            <div class="x-desktop-translated-text">${formatArabicBiDi(translation)}</div>
-          `;
+            resultBox.innerHTML = `
+              <div class="x-desktop-translation-meta">
+                <span>ترجمة النصوص المستخرجة من الصورة (Qwen3-VL · RTX 4060)</span>
+                <button class="x-desktop-show-original-link">إخفاء</button>
+              </div>
+              <div class="x-desktop-translated-text">${formatArabicBiDi(translation)}</div>
+            `;
 
-          const hideBtn = resultBox.querySelector('.x-desktop-show-original-link');
-          hideBtn.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            resultBox.style.display = 'none';
-            btn.innerHTML = '🖼️ ترجمة النص داخل الصورة (Qwen3-VL)';
+            const hideBtn = resultBox.querySelector('.x-desktop-show-original-link');
+            hideBtn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              resultBox.style.display = 'none';
+              btn.innerHTML = '🖼️ ترجمة النص داخل الصورة (Qwen3-VL)';
+              btn.disabled = false;
+            });
+
+            btn.innerHTML = '👁️ إخفاء ترجمة الصورة';
             btn.disabled = false;
-          });
-
-          btn.innerHTML = '👁️ إخفاء ترجمة الصورة';
-          btn.disabled = false;
+          };
+          imgObj.src = reader.result;
         };
 
-        reader.readAsDataURL(blob); };
+        reader.readAsDataURL(blob);
       } catch (err) {
         btn.innerHTML = '⚠️ تعذر فحص الصورة';
         btn.disabled = false;
@@ -279,23 +278,32 @@ function injectImageTranslateButtons() {
   });
 }
 
-// 9. Promoted Tweet & "Ad" Label Scrubber (Ad-Blocker)
+// 8. Absolute Promoted & Boosted Tweet Scrubber (Ad-Blocker)
 function isAdTweet(article) {
   if (article.querySelector('[data-testid="icon-promoted"]')) return true;
+
+  if (article.querySelector('[aria-label*="Promoted"], [aria-label*="إعلان"], [aria-label*="Sponsored"], [aria-label*="Boosted"]')) {
+    return true;
+  }
 
   const spans = article.querySelectorAll('span, div');
   for (let i = 0; i < spans.length; i++) {
     const el = spans[i];
     if (el.children.length === 0) {
-      const t = el.innerText ? el.innerText.trim() : '';
-      if (t === 'Ad' || t === 'مروّج' || t === 'Sponsored' || t === 'Promoted' || t === 'إعلان' || t === 'إعلان ممول') {
+      const t = el.textContent ? el.textContent.trim() : '';
+      if (
+        t === 'Ad' ||
+        t === 'مروّج' ||
+        t === 'Sponsored' ||
+        t === 'Promoted' ||
+        t === 'Boosted' ||
+        t === 'مُعزّز' ||
+        t === 'إعلان' ||
+        t === 'إعلان ممول'
+      ) {
         return true;
       }
     }
-  }
-
-  if (article.querySelector('[aria-label*="Promoted"], [aria-label*="إعلان"], [aria-label*="Sponsored"]')) {
-    return true;
   }
 
   return false;
@@ -313,7 +321,7 @@ function scrubPromotedContent() {
   });
 }
 
-// 10. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
+// 9. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -402,7 +410,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 11. Keyboard Shortcuts
+// 10. Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
@@ -425,7 +433,7 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Periodic & Mutation Loop for translation, vision, and ad cleaning
+// Periodic & Mutation Loop
 function runLoop() {
   scrubPromotedContent();
   injectTranslateButtons();
@@ -433,7 +441,6 @@ function runLoop() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  injectStyles();
   setupMediaTracking();
   runLoop();
 

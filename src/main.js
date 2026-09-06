@@ -181,6 +181,14 @@ function createWindow(targetUrl = 'https://x.com') {
     }
   });
 
+  const stylePath = path.join(__dirname, "style.css");
+  if (fs.existsSync(stylePath)) {
+    const css = fs.readFileSync(stylePath, "utf8");
+    mainWindow.webContents.on("dom-ready", () => {
+      mainWindow.webContents.insertCSS(css);
+    });
+  }
+
   mainWindow.loadURL(targetUrl);
 
   mainWindow.once('ready-to-show', () => {
