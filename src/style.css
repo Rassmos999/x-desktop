@@ -134,3 +134,11 @@ aside[aria-label*="Subscribe to Premium"] {
   to { opacity: 1; transform: translateY(0); }
 }
 
+
+/* 7. BiDirectional Isolation for URLs and @mentions in Arabic translations */
+.x-desktop-ltr-token {
+  display: inline-block;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  text-align: left;
+}

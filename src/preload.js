@@ -81,7 +81,29 @@ function injectStyles() {
   }
 }
 
-// 5. Toast Notification for Context-Menu Translations
+// 5. BiDi Formatter: Isolate URLs, domains, and @mentions from RTL text flipping
+function formatArabicBiDi(text) {
+  if (!text) return '';
+  
+  // Escape any raw HTML tags to prevent XSS
+  let escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 1. Isolate Full URLs (https://, http://)
+  escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
+
+  // 2. Isolate standalone web domains (e.g. outmatch.lol, github.com)
+  escaped = escaped.replace(/(?<![\/\w])([a-zA-Z0-9-]+\.(?:com|org|net|lol|io|ai|app|co|tv|me|xyz|dev|edu)(?:\/[^\s<]*)?)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
+
+  // 3. Isolate @mentions
+  escaped = escaped.replace(/(?<!\w)(@[a-zA-Z0-9_]{1,30})/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
+
+  return escaped;
+}
+
+// 6. Toast Notification for Context-Menu Translations
 function showToast(message) {
   let toast = document.querySelector('.x-desktop-toast');
   if (!toast) {
@@ -89,7 +111,7 @@ function showToast(message) {
     toast.className = 'x-desktop-toast';
     document.body.appendChild(toast);
   }
-  toast.innerHTML = `<span>🌐</span> <div style="flex:1;">${message}</div>`;
+  toast.innerHTML = `<span>🌐</span> <div style="flex:1;">${formatArabicBiDi(message)}</div>`;
   setTimeout(() => {
     if (toast && toast.parentElement) {
       toast.parentElement.removeChild(toast);
@@ -101,7 +123,7 @@ ipcRenderer.on('show-toast-message', (e, msg) => {
   showToast(msg);
 });
 
-// 6. Native In-Place Arabic Translation for Foreign Tweets
+// 7. Native In-Place Arabic Translation for Foreign Tweets
 function hasArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
@@ -132,7 +154,7 @@ function injectTranslateButtons() {
         return;
       }
 
-      link.innerHTML = 'جاري الترجمة...';
+      link.innerHTML = 'جاري الترجمة بالذكاء الاصطناعي...';
       link.disabled = true;
 
       try {
@@ -143,10 +165,10 @@ function injectTranslateButtons() {
         translationBox.className = 'x-desktop-translation-inline';
         translationBox.innerHTML = `
           <div class="x-desktop-translation-meta">
-            <span>ترجم من الإنجليزية بواسطة X Desktop</span>
+            <span>ترجم بواسطة الذكاء الاصطناعي (Qwen3 · RTX 4060)</span>
             <button class="x-desktop-show-original-link">عرض الأصل</button>
           </div>
-          <div class="x-desktop-translated-text">${translated}</div>
+          <div class="x-desktop-translated-text">${formatArabicBiDi(translated)}</div>
         `;
 
         const showOriginalBtn = translationBox.querySelector('.x-desktop-show-original-link');
@@ -170,24 +192,21 @@ function injectTranslateButtons() {
   });
 }
 
-// 7. Promoted Tweet & "Ad" Label Scrubber (Ad-Blocker)
+// 8. Promoted Tweet & "Ad" Label Scrubber (Ad-Blocker)
 function isAdTweet(article) {
-  // 1. Icon promoted testid
   if (article.querySelector('[data-testid="icon-promoted"]')) return true;
 
-  // 2. Check for "Ad", "مروّج", "Sponsored", "إعلان" label in headers
   const spans = article.querySelectorAll('span, div');
   for (let i = 0; i < spans.length; i++) {
     const el = spans[i];
     if (el.children.length === 0) {
       const t = el.innerText ? el.innerText.trim() : '';
-      if (t === 'Ad' || t === 'مروّج' || t === 'Sponsored' || t === 'Promoted' || t === 'إعلان' || t === 'إعلان مروّج') {
+      if (t === 'Ad' || t === 'مروّج' || t === 'Sponsored' || t === 'Promoted' || t === 'إعلان' || t === 'إعلان ممول') {
         return true;
       }
     }
   }
 
-  // 3. Check aria-labels
   if (article.querySelector('[aria-label*="Promoted"], [aria-label*="إعلان"], [aria-label*="Sponsored"]')) {
     return true;
   }
@@ -207,7 +226,7 @@ function scrubPromotedContent() {
   });
 }
 
-// 8. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
+// 9. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -296,7 +315,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 9. Keyboard Shortcuts
+// 10. Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
