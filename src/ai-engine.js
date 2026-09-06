@@ -23,7 +23,7 @@ class AIEngine {
 
     // Live Telemetry
     this.totalTokens = 1540;
-    this.requestCount = 12;
+    this.requestCount = 14;
     this.tokensPerSec = 115;
     this.lastContextMap = {
       system: 85,
@@ -194,23 +194,31 @@ class AIEngine {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert OCR and image translator. Extract and read all visible text in this image. Translate it accurately and naturally into modern Arabic. Output ONLY the translated Arabic text.'
+            content: 'You are an expert OCR and image translator. Extract and read all visible text in this image. Translate it accurately and naturally into modern Arabic. Output ONLY the translated Arabic text without notes, explanations, or quotes.'
           },
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Extract and translate the text in this image into Arabic:' },
+              { type: 'text', text: 'Translate all text in this image to Arabic:' },
               { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
             ]
           }
         ],
         temperature: 0.1,
+        frequency_penalty: 0.4,
+        stop: ["\n\nملاحظة", "\n\nNote", "\n\n---", "Translation:"],
         max_tokens: 512
       });
 
       const responseText = await this.postJson('/v1/chat/completions', payload, 35000);
       const data = JSON.parse(responseText);
-      const content = data?.choices?.[0]?.message?.content?.trim() || '';
+      let content = data?.choices?.[0]?.message?.content?.trim() || '';
+
+      const cutIndex = content.search(/\n\n(ملاحظة|ملاحظات|Note|Notes):/i);
+      if (cutIndex !== -1) {
+        content = content.slice(0, cutIndex).trim();
+      }
+      content = content.replace(/^["'«“]|["'»”]$/g, '').trim();
 
       const latency = Date.now() - t0;
       const promptTokens = data?.usage?.prompt_tokens || 950;
@@ -238,20 +246,31 @@ class AIEngine {
       messages: [
         {
           role: 'system',
-          content: "You are an expert bilingual social media translator. Translate the given text from English to punchy, natural, modern Arabic. Accurately translate internet slang, idioms, and colloquialisms (e.g. 'Annnnnnd we\'re live!' -> 'وأخيراً بدأ البث المباشر!', 'Rank is won, never bought' -> 'المكانة تُكتسب ولا تُشترى'). Preserve all @mentions, #hashtags, and URLs verbatim. Output ONLY the translated Arabic text without quotes, explanation, or preamble."
+          content: "Translate the following English social media post into natural, fluent, modern Arabic. Preserve @mentions, #hashtags, numbers, and URLs verbatim. Output ONLY the Arabic translation. Do NOT add notes, explanations, examples, or quotes."
         },
         {
           role: 'user',
           content: text
         }
       ],
-      temperature: 0.2,
+      temperature: 0.1,
+      frequency_penalty: 0.5,
+      presence_penalty: 0.2,
+      stop: ["\n\nملاحظة", "\n\nNote", "\n\n---", "Translation:", "ملاحظات:", "Note:"],
       max_tokens: 512
     });
 
     return this.postJson('/v1/chat/completions', payload, 15000).then(res => {
       const data = JSON.parse(res);
-      return data?.choices?.[0]?.message?.content?.trim() || '';
+      let content = data?.choices?.[0]?.message?.content?.trim() || '';
+      
+      // Safety filter: strip any accidental explanation headers or repetition notes
+      const cutIndex = content.search(/\n\n(ملاحظة|ملاحظات|Note|Notes):/i);
+      if (cutIndex !== -1) {
+        content = content.slice(0, cutIndex).trim();
+      }
+      content = content.replace(/^["'«“]|["'»”]$/g, '').trim();
+      return content;
     });
   }
 
