@@ -1,0 +1,19 @@
+{
+  "name": "x-desktop",
+  "productName": "X",
+  "version": "1.0.0",
+  "description": "Standalone X/Twitter Desktop Client for Linux with Wayland & Niri integration, Video PiP, Media Downloader, Clean View, and MPRIS controls",
+  "license": "MIT",
+  "author": "Omar",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/test-x-desktop.js"
+  },
+  "devDependencies": {
+    "electron": "^41.10.7"
+  },
+  "dependencies": {
+    "mpris-service": "^2.1.2"
+  }
+}

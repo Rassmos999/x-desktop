@@ -1,0 +1,29 @@
+[Desktop Entry]
+Name=X
+GenericName=Social Network
+Comment=Standalone X/Twitter Desktop Client with Wayland & Niri integration, Video PiP, Media Downloader, and MPRIS controls
+Exec=x-desktop %U
+Icon=x-desktop
+Terminal=false
+Type=Application
+Categories=Network;Chat;Feed;
+MimeType=x-scheme-handler/twitter;x-scheme-handler/x;
+StartupWMClass=x-desktop
+Keywords=x;twitter;tweet;social;feed;spaces;wayland;desktop;
+Actions=NewTweet;Notifications;Messages;Profile;
+
+[Desktop Action NewTweet]
+Name=Compose New Post
+Exec=x-desktop https://x.com/compose/post
+
+[Desktop Action Notifications]
+Name=Notifications
+Exec=x-desktop https://x.com/notifications
+
+[Desktop Action Messages]
+Name=Direct Messages
+Exec=x-desktop https://x.com/messages
+
+[Desktop Action Profile]
+Name=Profile
+Exec=x-desktop https://x.com/i/flow/redirect_to_profile

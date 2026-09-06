@@ -1,0 +1,303 @@
+
+const { ipcRenderer } = require('electron');
+const fs = require('fs');
+const path = require('path');
+
+// 1. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
+function injectStyles() {
+  try {
+    const stylePath = path.join(__dirname, 'style.css');
+    if (fs.existsSync(stylePath)) {
+      const css = fs.readFileSync(stylePath, 'utf8');
+      let styleEl = document.getElementById('x-desktop-custom-styles');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'x-desktop-custom-styles';
+        (document.head || document.documentElement).appendChild(styleEl);
+      }
+      styleEl.textContent = css;
+    }
+  } catch (err) {
+    console.warn('[X Desktop] Error injecting custom styles:', err);
+  }
+}
+
+// 2. Hide Promoted Tweets & Web Promotional Elements via MutationObserver
+function scrubPromotedContent() {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(tw => {
+    // Check if tweet contains promoted indicators
+    const isPromoted = 
+      tw.querySelector('[data-testid="icon-promoted"]') ||
+      tw.querySelector('span[dir="ltr"]:is(:has-text("Ad"), :has-text("مروّج"), :has-text("Promoted"))') ||
+      (tw.innerText && (tw.innerText.includes('Promoted') || tw.innerText.includes('مروّج') || tw.innerText.includes('إعلان مروّج')));
+
+    if (isPromoted && !tw.dataset.xScrubbed) {
+      tw.dataset.xScrubbed = 'true';
+      tw.style.display = 'none';
+    }
+  });
+}
+
+// 3. Media Tracking & MPRIS D-Bus Synchronization
+let activeMedia = null;
+
+function setupMediaTracking() {
+  document.addEventListener('play', (event) => {
+    const target = event.target;
+    if (target && (target.tagName === 'VIDEO' || target.tagName === 'AUDIO')) {
+      activeMedia = target;
+      sendMprisUpdate('Playing');
+
+      target.onpause = () => sendMprisUpdate('Paused');
+      target.onended = () => sendMprisUpdate('Stopped');
+      target.ontimeupdate = () => {
+        if (!target.paused) {
+          ipcRenderer.send('mpris-position', target.currentTime);
+        }
+      };
+    }
+  }, true);
+
+  document.addEventListener('pause', (event) => {
+    if (event.target === activeMedia) {
+      sendMprisUpdate('Paused');
+    }
+  }, true);
+}
+
+function sendMprisUpdate(playbackStatus) {
+  if (!activeMedia) return;
+
+  let title = 'X Media';
+  let artist = 'X (Twitter)';
+  let artwork = '';
+
+  const article = activeMedia.closest('article[data-testid="tweet"]');
+  if (article) {
+    const userEl = article.querySelector('[data-testid="User-Name"]');
+    if (userEl) {
+      artist = userEl.innerText.split('\n')[0] || 'X Creator';
+    }
+    const textEl = article.querySelector('[data-testid="tweetText"]');
+    if (textEl) {
+      title = textEl.innerText.slice(0, 70);
+    }
+    const avatar = article.querySelector('img[src*="profile_images"]');
+    if (avatar) {
+      artwork = avatar.src;
+    }
+  }
+
+  ipcRenderer.send('mpris-update', {
+    playbackStatus,
+    title,
+    artist,
+    artwork,
+    duration: activeMedia.duration || 0,
+    position: activeMedia.currentTime || 0,
+    volume: activeMedia.volume || 1
+  });
+}
+
+// Listen for MPRIS controls from system D-Bus
+ipcRenderer.on('mpris-action', (e, action, arg) => {
+  if (!activeMedia) {
+    activeMedia = document.querySelector('video') || document.querySelector('audio');
+  }
+  if (!activeMedia) return;
+
+  if (action === 'playpause') {
+    activeMedia.paused ? activeMedia.play() : activeMedia.pause();
+  } else if (action === 'play') {
+    activeMedia.play();
+  } else if (action === 'pause') {
+    activeMedia.pause();
+  } else if (action === 'stop') {
+    activeMedia.pause();
+    activeMedia.currentTime = 0;
+  } else if (action === 'seek' && typeof arg === 'number') {
+    activeMedia.currentTime = Math.max(0, Math.min(activeMedia.duration || 0, activeMedia.currentTime + arg));
+  } else if (action === 'position' && typeof arg === 'number') {
+    activeMedia.currentTime = arg;
+  } else if (action === 'volume' && typeof arg === 'number') {
+    activeMedia.volume = Math.max(0, Math.min(1, arg));
+  }
+});
+
+// 4. Picture-in-Picture (PiP) Enhancement
+function injectPiPButtons() {
+  const videos = document.querySelectorAll('video');
+  videos.forEach(vid => {
+    const container = vid.closest('div[data-testid="videoComponent"]') || 
+                      vid.closest('div[data-testid="videoPlayer"]') || 
+                      vid.parentElement;
+    if (!container || container.querySelector('.x-desktop-pip-btn')) return;
+
+    // Ensure container has relative positioning
+    if (window.getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative';
+    }
+
+    const pipBtn = document.createElement('button');
+    pipBtn.className = 'x-desktop-pip-btn';
+    pipBtn.title = 'Picture-in-Picture (Ctrl+Shift+P)';
+    pipBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+        <rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor"></rect>
+      </svg>
+    `;
+
+    pipBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      try {
+        if (document.pictureInPictureElement === vid) {
+          await document.exitPictureInPicture();
+        } else {
+          await vid.requestPictureInPicture();
+        }
+      } catch (err) {
+        console.warn('[X Desktop] PiP request failed:', err);
+      }
+    });
+
+    container.appendChild(pipBtn);
+  });
+}
+
+// 5. Media Downloader Action Button in Tweets
+function injectDownloadButtons() {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(tw => {
+    const actionGroup = tw.querySelector('div[role="group"]');
+    if (!actionGroup || actionGroup.querySelector('.x-desktop-download-btn')) return;
+
+    // Check if tweet has media (photos or video)
+    const hasMedia = tw.querySelector('div[data-testid="tweetPhoto"]') || 
+                     tw.querySelector('img[src*="pbs.twimg.com/media"]') ||
+                     tw.querySelector('video');
+
+    if (!hasMedia) return;
+
+    const btn = document.createElement('div');
+    btn.className = 'x-desktop-download-btn';
+    btn.title = 'تحميل الوسائط إلى ~/Downloads';
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24">
+        <path d="M12 15.586l4.293-4.293 1.414 1.414L12 18.414l-5.707-5.707 1.414-1.414L12 15.586zM11 2h2v12h-2V2zm-7 18h16v2H4v-2z"></path>
+      </svg>
+    `;
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      downloadTweetMedia(tw);
+    });
+
+    actionGroup.appendChild(btn);
+  });
+}
+
+function showToast(message) {
+  let toast = document.querySelector('.x-desktop-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'x-desktop-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span>💾</span> <span>${message}</span>`;
+  setTimeout(() => {
+    if (toast && toast.parentElement) {
+      toast.parentElement.removeChild(toast);
+    }
+  }, 3500);
+}
+
+function downloadTweetMedia(article) {
+  const images = article.querySelectorAll('img[src*="pbs.twimg.com/media"]');
+  const video = article.querySelector('video');
+
+  let count = 0;
+
+  images.forEach((img, idx) => {
+    let src = img.src;
+    // Request original high resolution
+    if (src.includes('name=')) {
+      src = src.replace(/name=[a-zA-Z0-9_]+/, 'name=orig');
+    } else {
+      src += src.includes('?') ? '&name=orig' : '?name=orig';
+    }
+
+    ipcRenderer.send('download-url', {
+      url: src,
+      filename: `x-media-${Date.now()}-${idx + 1}.jpg`
+    });
+    count++;
+  });
+
+  if (video && video.src) {
+    ipcRenderer.send('download-url', {
+      url: video.src,
+      filename: `x-video-${Date.now()}.mp4`
+    });
+    count++;
+  }
+
+  if (count > 0) {
+    showToast(`جاري تحميل ${count} ملف إلى مجلد Downloads...`);
+  } else {
+    showToast('لم يتم العثور على رابط مباشر للوسائط.');
+  }
+}
+
+// 6. Keyboard Shortcuts
+window.addEventListener('keydown', (e) => {
+  // Ctrl+N: Compose new tweet
+  if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'n') {
+    e.preventDefault();
+    const composeLink = document.querySelector('a[href="/compose/post"]') || document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
+    if (composeLink) {
+      composeLink.click();
+    } else {
+      window.location.href = 'https://x.com/compose/post';
+    }
+  }
+
+  // Ctrl+Shift+P: Toggle PiP on active video
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') {
+    e.preventDefault();
+    const vid = activeMedia || document.querySelector('video');
+    if (vid) {
+      if (document.pictureInPictureElement === vid) {
+        document.exitPictureInPicture().catch(() => {});
+      } else {
+        vid.requestPictureInPicture().catch(() => {});
+      }
+    }
+  }
+});
+
+// Periodic and Mutation loop for DOM enhancements
+function runLoop() {
+  scrubPromotedContent();
+  injectPiPButtons();
+  injectDownloadButtons();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  injectStyles();
+  setupMediaTracking();
+  runLoop();
+
+  const observer = new MutationObserver(() => {
+    runLoop();
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+});
+

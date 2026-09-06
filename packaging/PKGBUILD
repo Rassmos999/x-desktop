@@ -1,0 +1,28 @@
+# Maintainer: Omar
+pkgname=x-desktop
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Standalone X/Twitter Desktop Client with Wayland & Niri integration, Video PiP, and MPRIS controls'
+arch=('x86_64')
+url='https://github.com/x-desktop/x-desktop'
+license=('MIT')
+depends=('alsa-lib' 'at-spi2-core' 'cairo' 'cups' 'dbus' 'glib2' 'gtk3' 'libdrm' 'libx11' 'libxcomposite' 'libxdamage' 'libxext' 'libxfixes' 'libxrandr' 'mesa' 'nspr' 'nss' 'pango' 'zlib')
+makedepends=('npm' 'make' 'librsvg')
+source=()
+sha256sums=()
+
+build() {
+  cd "$SRCDEST"
+  npm install --no-audit --no-fund
+  node node_modules/electron/install.js
+  python3 tools/make-icons.py
+}
+
+package() {
+  cd "$SRCDEST"
+  make install DESTDIR="$pkgdir" PREFIX=/usr
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+  install -Dm644 data/niri-rules.kdl "$pkgdir/usr/share/doc/$pkgname/niri-rules.kdl"
+  install -Dm644 data/hyprland-rules.conf "$pkgdir/usr/share/doc/$pkgname/hyprland-rules.conf"
+}
+
