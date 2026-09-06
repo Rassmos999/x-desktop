@@ -38,11 +38,12 @@ assert(preloadCode.includes('injectStyles'), 'injectStyles must exist');
 assert(preloadCode.includes('setupMediaTracking'), 'setupMediaTracking must exist');
 assert(preloadCode.includes('injectTranslateButtons'), 'injectTranslateButtons must exist');
 assert(preloadCode.includes('scrubPromotedContent'), 'scrubPromotedContent must exist');
+assert(preloadCode.includes('isAdTweet'), 'isAdTweet must exist');
 assert(preloadCode.includes('zoom-in'), 'zoom-in must exist');
 
 const cssCode = fs.readFileSync(path.join(ROOT, 'src', 'style.css'), 'utf8');
-assert(cssCode.includes('x-desktop-translation-box'), 'Translation box styling must exist');
-assert(cssCode.includes('x-desktop-translate-btn'), 'Translate button styling must exist');
+assert(cssCode.includes('x-desktop-translation-inline'), 'Translation inline styling must exist');
+assert(cssCode.includes('x-desktop-translate-link'), 'Translate link styling must exist');
 console.log('   ✅ Preload and Translation CSS rules verified.');
 
 // 4. Check Main Ad-Blocker and Translation Handler
@@ -53,7 +54,7 @@ assert(mainCode.includes('translate-text'), 'translate-text IPC handler must exi
 assert(mainCode.includes('zoomIn'), 'zoomIn must exist');
 console.log('   ✅ Ad-blocker patterns and translation backend verified.');
 
-// 5. Check MPRIS Service Logic
+// 5. Check MPRIS Module
 console.log('👉 [5/7] Checking MPRIS Module...');
 const mprisModule = require(path.join(ROOT, 'src', 'mpris.js'));
 assert.strictEqual(typeof mprisModule.initMpris, 'function');

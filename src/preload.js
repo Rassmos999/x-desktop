@@ -62,7 +62,7 @@ document.addEventListener('click', (event) => {
   }
 }, true);
 
-// 4. Inject custom styles (Clean view, translation box, smooth scrollbar)
+// 4. Inject custom styles (Clean view, translation styling, smooth scrollbar)
 function injectStyles() {
   try {
     const stylePath = path.join(__dirname, 'style.css');
@@ -101,7 +101,7 @@ ipcRenderer.on('show-toast-message', (e, msg) => {
   showToast(msg);
 });
 
-// 6. Inline Arabic Translation for Foreign Tweets
+// 6. Native In-Place Arabic Translation for Foreign Tweets
 function hasArabic(text) {
   return /[\u0600-\u06FF]/.test(text);
 }
@@ -110,85 +110,97 @@ function injectTranslateButtons() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
     const textEl = tw.querySelector('[data-testid="tweetText"]');
-    if (!textEl || tw.querySelector('.x-desktop-translate-btn')) return;
+    if (!textEl || tw.querySelector('.x-desktop-translate-link') || tw.querySelector('.x-desktop-translation-inline')) return;
 
     const originalText = textEl.innerText.trim();
     if (originalText.length < 5 || hasArabic(originalText)) return;
 
-    const btn = document.createElement('button');
-    btn.className = 'x-desktop-translate-btn';
-    btn.innerHTML = '🌐 ترجمة إلى العربية';
+    const link = document.createElement('button');
+    link.className = 'x-desktop-translate-link';
+    link.innerHTML = 'ترجمة المنشور';
 
-    let isTranslated = false;
     let translationBox = null;
     let cachedTranslation = '';
 
-    btn.addEventListener('click', async (e) => {
+    link.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (isTranslated) {
-        if (translationBox) translationBox.style.display = 'none';
-        btn.innerHTML = '🌐 ترجمة إلى العربية';
-        isTranslated = false;
-        return;
-      }
-
       if (cachedTranslation && translationBox) {
         translationBox.style.display = 'block';
-        btn.innerHTML = '👁️ إخفاء الترجمة';
-        isTranslated = true;
+        link.style.display = 'none';
         return;
       }
 
-      btn.innerHTML = '⏳ جاري الترجمة...';
-      btn.disabled = true;
+      link.innerHTML = 'جاري الترجمة...';
+      link.disabled = true;
 
       try {
         const translated = await ipcRenderer.invoke('translate-text', originalText);
         cachedTranslation = translated;
 
         translationBox = document.createElement('div');
-        translationBox.className = 'x-desktop-translation-box';
+        translationBox.className = 'x-desktop-translation-inline';
         translationBox.innerHTML = `
-          <div class="x-desktop-translation-header">
-            <span>ترجمة آلية للعربية</span>
-            <button class="x-desktop-toggle-original">إخفاء</button>
+          <div class="x-desktop-translation-meta">
+            <span>ترجم من الإنجليزية بواسطة X Desktop</span>
+            <button class="x-desktop-show-original-link">عرض الأصل</button>
           </div>
-          <div class="x-desktop-translation-text">${translated}</div>
+          <div class="x-desktop-translated-text">${translated}</div>
         `;
 
-        const toggleBtn = translationBox.querySelector('.x-desktop-toggle-original');
-        toggleBtn.addEventListener('click', (ev) => {
+        const showOriginalBtn = translationBox.querySelector('.x-desktop-show-original-link');
+        showOriginalBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           translationBox.style.display = 'none';
-          btn.innerHTML = '🌐 ترجمة إلى العربية';
-          isTranslated = false;
+          link.style.display = 'inline-block';
+          link.innerHTML = 'ترجمة المنشور';
+          link.disabled = false;
         });
 
         textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
-        btn.innerHTML = '👁️ إخفاء الترجمة';
-        btn.disabled = false;
-        isTranslated = true;
+        link.style.display = 'none';
       } catch (err) {
-        btn.innerHTML = '⚠️ تعذرت الترجمة';
-        btn.disabled = false;
+        link.innerHTML = 'تعذرت الترجمة';
+        link.disabled = false;
       }
     });
 
-    textEl.parentNode.insertBefore(btn, textEl.nextSibling);
+    textEl.parentNode.insertBefore(link, textEl.nextSibling);
   });
 }
 
-// 7. Promoted Tweet Scrubber (Ad-Blocker)
+// 7. Promoted Tweet & "Ad" Label Scrubber (Ad-Blocker)
+function isAdTweet(article) {
+  // 1. Icon promoted testid
+  if (article.querySelector('[data-testid="icon-promoted"]')) return true;
+
+  // 2. Check for "Ad", "مروّج", "Sponsored", "إعلان" label in headers
+  const spans = article.querySelectorAll('span, div');
+  for (let i = 0; i < spans.length; i++) {
+    const el = spans[i];
+    if (el.children.length === 0) {
+      const t = el.innerText ? el.innerText.trim() : '';
+      if (t === 'Ad' || t === 'مروّج' || t === 'Sponsored' || t === 'Promoted' || t === 'إعلان' || t === 'إعلان مروّج') {
+        return true;
+      }
+    }
+  }
+
+  // 3. Check aria-labels
+  if (article.querySelector('[aria-label*="Promoted"], [aria-label*="إعلان"], [aria-label*="Sponsored"]')) {
+    return true;
+  }
+
+  return false;
+}
+
 function scrubPromotedContent() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
-    const isPromoted = 
-      tw.querySelector('[data-testid="icon-promoted"]') ||
-      (tw.innerText && (tw.innerText.includes('Promoted') || tw.innerText.includes('مروّج') || tw.innerText.includes('إعلان مروّج')));
+    if (tw.dataset.xScrubbed) return;
 
-    if (isPromoted && !tw.dataset.xScrubbed) {
+    if (isAdTweet(tw)) {
       tw.dataset.xScrubbed = 'true';
       tw.style.display = 'none';
     }

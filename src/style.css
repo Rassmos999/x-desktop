@@ -1,5 +1,5 @@
 
-/* X Desktop - Clean Styling & Translation Enhancements */
+/* X Desktop - Impeccable Native Styling */
 
 /* 1. Smooth native desktop scrollbars */
 ::-webkit-scrollbar {
@@ -40,76 +40,70 @@ aside[aria-label*="Subscribe to Premium"] {
   display: none !important;
 }
 
-/* 4. Inline Translation Button */
-.x-desktop-translate-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  margin-bottom: 4px;
-  padding: 3px 10px;
-  background: transparent;
-  border: 1px solid rgba(29, 155, 240, 0.4);
+/* 4. Native X-Style "Translate post" Link */
+.x-desktop-translate-link {
+  display: inline-block;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 18px;
   color: rgb(29, 155, 240);
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.x-desktop-translate-btn:hover {
-  background: rgba(29, 155, 240, 0.12);
-  border-color: rgb(29, 155, 240);
-}
-
-/* 5. In-Place Arabic Translation Box */
-.x-desktop-translation-box {
-  margin-top: 8px;
-  margin-bottom: 8px;
-  padding: 10px 14px;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.65;
-  color: #f1f5f9;
-  direction: rtl;
-  text-align: right;
-  animation: xFadeIn 0.25s ease forwards;
-}
-
-.x-desktop-translation-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 11px;
-  color: #94a3b8;
-}
-
-.x-desktop-toggle-original {
   background: none;
   border: none;
-  color: #38bdf8;
-  cursor: pointer;
-  font-size: 11px;
   padding: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+.x-desktop-translate-link:hover {
   text-decoration: underline;
 }
 
-.x-desktop-toggle-original:hover {
-  color: #7dd3fc;
+/* 5. In-Place Seamless Arabic Translation Block */
+.x-desktop-translation-inline {
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(47, 51, 54);
+  direction: rtl;
+  text-align: right;
+  animation: xFadeIn 0.2s ease forwards;
 }
 
-.x-desktop-translation-text {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
+.x-desktop-translation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgb(113, 118, 123);
+  margin-bottom: 4px;
+}
+
+.x-desktop-show-original-link {
+  color: rgb(29, 155, 240);
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.x-desktop-show-original-link:hover {
+  text-decoration: underline;
+}
+
+.x-desktop-translated-text {
+  font-family: TwitterChirp, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
+  font-size: 15px;
+  line-height: 20px;
+  color: rgb(231, 233, 234);
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 /* 6. Desktop Toast Notification */
@@ -136,7 +130,7 @@ aside[aria-label*="Subscribe to Premium"] {
 }
 
 @keyframes xFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
