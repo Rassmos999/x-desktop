@@ -60,27 +60,22 @@ if (!gotTheLock) {
 let mainWindow = null;
 let tray = null;
 
-const ALLOWED_AUTH_DOMAINS = [
-  'x.com',
-  'twitter.com',
-  'twimg.com',
-  't.co',
-  'google.com',
-  'accounts.google.com',
-  'gstatic.com',
-  'googleusercontent.com',
-  'googleapis.com',
-  'apple.com',
-  'appleid.apple.com'
-];
-
-function isAllowedDomain(url) {
+// Determine if a URL is strictly internal to X (not an external redirect like t.co)
+function isInternalXUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  if (url.includes('t.co/')) return false;
   try {
     const parsed = new URL(url);
-    return ALLOWED_AUTH_DOMAINS.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d));
+    const host = parsed.hostname;
+    return host.endsWith('x.com') || host.endsWith('twitter.com');
   } catch (e) {
     return false;
   }
+}
+
+function isAuthServiceUrl(url) {
+  if (!url) return false;
+  return url.includes('accounts.google.com') || url.includes('appleid.apple.com');
 }
 
 function parseTargetUrl(argv) {
@@ -143,10 +138,19 @@ function createWindow(targetUrl = 'https://x.com') {
     }
   }, 800);
 
-  // Handle OAuth popups and navigation
+  // Intercept all top-level navigations: If external or t.co, open in default browser!
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (isInternalXUrl(url) || isAuthServiceUrl(url)) {
+      return; // Allow internal navigation
+    }
+    event.preventDefault();
+    shell.openExternal(url);
+  });
+
+  // Handle OAuth popups and window.open requests
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    // 1. Allow native modal popup for OAuth flows (Google, Apple)
-    if (url.includes('accounts.google.com') || url.includes('appleid.apple.com')) {
+    // 1. OAuth authentication popup (Google, Apple)
+    if (isAuthServiceUrl(url)) {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
@@ -163,15 +167,24 @@ function createWindow(targetUrl = 'https://x.com') {
       };
     }
 
-    // 2. Allowed internal X navigation
-    if (isAllowedDomain(url)) {
+    // 2. Internal X link opened in new window: navigate inside main window
+    if (isInternalXUrl(url)) {
       mainWindow.loadURL(url);
       return { action: 'deny' };
     }
 
-    // 3. External links open in default browser
+    // 3. Any external link (including all t.co shortened links): Open in user's default browser!
     shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  // Native mouse back/forward buttons
+  mainWindow.webContents.on('app-command', (e, cmd) => {
+    if (cmd === 'browser-backward' && mainWindow.webContents.canGoBack()) {
+      mainWindow.webContents.goBack();
+    } else if (cmd === 'browser-forward' && mainWindow.webContents.canGoForward()) {
+      mainWindow.webContents.goForward();
+    }
   });
 
   mainWindow.on('close', (event) => {
@@ -263,6 +276,7 @@ function createWindow(targetUrl = 'https://x.com') {
     menu.append(new MenuItem({ type: 'separator' }));
     menu.append(new MenuItem({
       label: 'Home (X)',
+      accelerator: 'CmdOrCtrl+1',
       click: () => mainWindow.loadURL('https://x.com/home')
     }));
     menu.append(new MenuItem({
@@ -399,6 +413,13 @@ function createTray() {
     }
   });
 }
+
+// Open external URL in system browser
+ipcMain.on('open-external-url', (event, url) => {
+  if (url) {
+    shell.openExternal(url);
+  }
+});
 
 // Media Downloader handler
 ipcMain.on('download-url', (event, { url, filename }) => {

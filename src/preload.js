@@ -6,11 +6,35 @@ const path = require('path');
 // Strictly guard: only execute desktop enhancements on X/Twitter domains
 const isXDomain = window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com');
 if (!isXDomain) {
-  // Do not inject X-specific scripts or styles into OAuth pages (Google, Apple)
   return;
 }
 
-// 1. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
+// 1. Intercept Link Clicks: Open external & t.co links in system default browser (Brave, Chrome, etc.)
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a');
+  if (!link || !link.href) return;
+
+  const href = link.href;
+
+  // Check if link is a t.co redirect or an external non-X link
+  const isTco = href.includes('t.co/');
+  let isExternal = false;
+  try {
+    const parsed = new URL(href);
+    const host = parsed.hostname;
+    isExternal = !host.endsWith('x.com') && !host.endsWith('twitter.com');
+  } catch (e) {
+    isExternal = false;
+  }
+
+  if (isTco || isExternal) {
+    event.preventDefault();
+    event.stopPropagation();
+    ipcRenderer.send('open-external-url', href);
+  }
+}, true);
+
+// 2. Inject custom styles (Clean view, PiP button, Downloader, smooth scrollbar)
 function injectStyles() {
   try {
     const stylePath = path.join(__dirname, 'style.css');
@@ -29,7 +53,7 @@ function injectStyles() {
   }
 }
 
-// 2. Hide Promoted Tweets & Web Promotional Elements via MutationObserver
+// 3. Hide Promoted Tweets & Web Promotional Elements via MutationObserver
 function scrubPromotedContent() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
@@ -44,7 +68,7 @@ function scrubPromotedContent() {
   });
 }
 
-// 3. Media Tracking & MPRIS D-Bus Synchronization
+// 4. Media Tracking & MPRIS D-Bus Synchronization
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -130,7 +154,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 4. Picture-in-Picture (PiP) Enhancement
+// 5. Picture-in-Picture (PiP) Enhancement
 function injectPiPButtons() {
   const videos = document.querySelectorAll('video');
   videos.forEach(vid => {
@@ -171,7 +195,7 @@ function injectPiPButtons() {
   });
 }
 
-// 5. Media Downloader Action Button in Tweets
+// 6. Media Downloader Action Button in Tweets
 function injectDownloadButtons() {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
@@ -262,7 +286,7 @@ function downloadTweetMedia(article) {
   }
 }
 
-// 6. Native Desktop Keyboard Shortcuts
+// 7. Native Desktop Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     // Ctrl+1: Home
