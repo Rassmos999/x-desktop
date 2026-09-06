@@ -13,6 +13,14 @@ const MMPROJ_PATH = path.join(MODELS_DIR, 'mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf'
 const SERVER_BIN = path.join(BIN_DIR, 'llama-server');
 const AI_PORT = 28491;
 
+const TRANSLATION_PROMPT = [
+  'You are a professional bilingual translator for technology, design, and social media.',
+  'Translate the English post into natural, punchy, modern Arabic.',
+  'Translate colloquial idioms naturally (e.g. "we are cooking" -> "نحن نجهّز" or "نعمل على إعداد", "stay tuned" -> "ترقبوا قريباً", "live" -> "متاح الآن/بدأ البث").',
+  'CRITICAL: Keep all website domains and URLs (e.g. grainient.supply, outmatch.lol), brand names, and @mentions strictly in English. Do not translate or modify them.',
+  'Output ONLY the final Arabic translation without quotes, alternatives, notes, or explanations.'
+].join('\n');
+
 class AIEngine {
   constructor() {
     this.process = null;
@@ -199,7 +207,7 @@ class AIEngine {
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Translate all text in this image to Arabic:' },
+              { type: 'text', text: 'Extract and translate the text in this image into Arabic:' },
               { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
             ]
           }
@@ -246,7 +254,7 @@ class AIEngine {
       messages: [
         {
           role: 'system',
-          content: "Translate the following English social media post into natural, fluent, modern Arabic. Preserve @mentions, #hashtags, numbers, and URLs verbatim. Output ONLY the Arabic translation. Do NOT add notes, explanations, examples, or quotes."
+          content: TRANSLATION_PROMPT
         },
         {
           role: 'user',
@@ -254,7 +262,7 @@ class AIEngine {
         }
       ],
       temperature: 0.1,
-      frequency_penalty: 0.5,
+      frequency_penalty: 0.4,
       presence_penalty: 0.2,
       stop: ["\n\nملاحظة", "\n\nNote", "\n\n---", "Translation:", "ملاحظات:", "Note:"],
       max_tokens: 512
@@ -264,7 +272,6 @@ class AIEngine {
       const data = JSON.parse(res);
       let content = data?.choices?.[0]?.message?.content?.trim() || '';
       
-      // Safety filter: strip any accidental explanation headers or repetition notes
       const cutIndex = content.search(/\n\n(ملاحظة|ملاحظات|Note|Notes):/i);
       if (cutIndex !== -1) {
         content = content.slice(0, cutIndex).trim();

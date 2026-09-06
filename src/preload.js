@@ -128,7 +128,7 @@ function injectTranslateButtons() {
     const textEl = tw.querySelector('[data-testid="tweetText"]');
     if (!textEl || tw.querySelector('.x-desktop-translate-link') || tw.querySelector('.x-desktop-translation-inline')) return;
 
-    const originalText = textEl.innerText.trim();
+    const originalText = getCleanTweetText(textEl);
     if (originalText.length < 5 || hasArabic(originalText)) return;
 
     const link = document.createElement('button');
