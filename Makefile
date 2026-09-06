@@ -71,7 +71,7 @@ install: $(ELECTRON)/electron icons
 	  fi; \
 	done
 	@if [ ! -f $(DESTDIR)$(icontheme)/index.theme ]; then \
-	  printf '[Icon Theme]\nName=Hicolor\nComment=Fallback icon theme\nHidden=true\nDirectories=scalable/apps\n' > $(DESTDIR)$(icontheme)/index.theme; \
+	  cp /usr/share/icons/hicolor/index.theme $(DESTDIR)$(icontheme)/index.theme; \
 	fi
 	@-update-desktop-database $(DESTDIR)$(appdir) 2>/dev/null || true
 	@-gtk-update-icon-cache -f -t $(DESTDIR)$(icontheme) 2>/dev/null || true
