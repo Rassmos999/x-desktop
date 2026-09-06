@@ -2,6 +2,7 @@
 const { app, BrowserWindow, shell, ipcMain, session, Menu, MenuItem, Tray } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 const os = require('os');
 const { initMpris, updateMprisState } = require('./mpris');
 
@@ -38,7 +39,7 @@ app.setPath('userData', userDataPath);
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu-sandbox');
 
-// Hardware acceleration & clean Wayland flags (No broken Vulkan/Vaapi on NVIDIA)
+// Hardware acceleration & clean Wayland flags
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
 app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox,Vulkan');
@@ -53,6 +54,63 @@ if (!gotTheLock) {
 
 let mainWindow = null;
 let tray = null;
+
+// Translation Cache (LRU in-memory cache)
+const translationCache = new Map();
+const MAX_CACHE_SIZE = 500;
+
+function translateText(text, targetLang = 'ar') {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    return Promise.resolve('');
+  }
+  const trimmed = text.trim();
+  const cacheKey = `${targetLang}:${trimmed}`;
+  if (translationCache.has(cacheKey)) {
+    return Promise.resolve(translationCache.get(cacheKey));
+  }
+
+  return new Promise((resolve) => {
+    const url = `https://translate.google.com/m?sl=auto&tl=${targetLang}&q=${encodeURIComponent(trimmed)}`;
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        const match = data.match(/<div class="result-container">([^<]+)<\/div>/);
+        if (match && match[1]) {
+          let translated = match[1]
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>');
+
+          if (translationCache.size >= MAX_CACHE_SIZE) {
+            const firstKey = translationCache.keys().next().value;
+            translationCache.delete(firstKey);
+          }
+          translationCache.set(cacheKey, translated);
+          resolve(translated);
+        } else {
+          resolve(trimmed);
+        }
+      });
+    });
+
+    req.on('error', () => resolve(trimmed));
+    req.setTimeout(4500, () => {
+      req.destroy();
+      resolve(trimmed);
+    });
+  });
+}
+
+ipcMain.handle('translate-text', async (event, text) => {
+  return await translateText(text, 'ar');
+});
 
 // Zoom Management
 const MIN_ZOOM = 0.5;
@@ -127,6 +185,20 @@ function showAndFocusWindow() {
   mainWindow.setAlwaysOnTop(false);
 }
 
+// Known Ad & Analytics Tracking Patterns to Block on the Network Level
+const AD_TRACKER_PATTERNS = [
+  '*://*.ads-api.twitter.com/*',
+  '*://*.ads.twitter.com/*',
+  '*://*.analytics.twitter.com/*',
+  '*://*.analytics.x.com/*',
+  '*://*.scribe.twitter.com/*',
+  '*://*.adservice.google.com/*',
+  '*://*.googleads.g.doubleclick.net/*',
+  '*://*.pagead2.googlesyndication.com/*',
+  '*://*.doubleclick.net/*',
+  '*://ad.doubleclick.net/*'
+];
+
 function createWindow(targetUrl = 'https://x.com') {
   mainWindow = new BrowserWindow({
     width: 1320,
@@ -163,18 +235,13 @@ function createWindow(targetUrl = 'https://x.com') {
   // Global Keyboard Zoom Handler (Ctrl + =, Ctrl + -, Ctrl + 0)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.control && !input.alt && input.type === 'keyDown') {
-      // Zoom in with Ctrl + = (or Ctrl + + without needing Shift)
       if (input.key === '=' || input.key === '+' || input.code === 'Equal' || input.code === 'NumpadAdd') {
         event.preventDefault();
         zoomIn();
-      }
-      // Zoom out with Ctrl + -
-      else if (input.key === '-' || input.key === '_' || input.code === 'Minus' || input.code === 'NumpadSubtract') {
+      } else if (input.key === '-' || input.key === '_' || input.code === 'Minus' || input.code === 'NumpadSubtract') {
         event.preventDefault();
         zoomOut();
-      }
-      // Reset zoom with Ctrl + 0
-      else if (input.key === '0' || input.code === 'Digit0' || input.code === 'Numpad0') {
+      } else if (input.key === '0' || input.code === 'Digit0' || input.code === 'Numpad0') {
         event.preventDefault();
         zoomReset();
       }
@@ -244,6 +311,25 @@ function createWindow(targetUrl = 'https://x.com') {
   mainWindow.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
 
+    // Selection actions: Translate to Arabic, Copy, Search
+    if (params.selectionText) {
+      menu.append(new MenuItem({
+        label: '🌐 ترجمة النص إلى العربية',
+        click: async () => {
+          const translated = await translateText(params.selectionText, 'ar');
+          mainWindow.webContents.send('show-toast-message', translated);
+        }
+      }));
+      menu.append(new MenuItem({ role: 'copy' }));
+      menu.append(new MenuItem({
+        label: `Search X for "${params.selectionText.slice(0, 20)}..."`,
+        click: () => {
+          mainWindow.loadURL(`https://x.com/search?q=${encodeURIComponent(params.selectionText)}&f=live`);
+        }
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
     if (params.linkURL) {
       menu.append(new MenuItem({
         label: 'Open Link in Default Browser',
@@ -271,17 +357,6 @@ function createWindow(targetUrl = 'https://x.com') {
         click: () => {
           const { clipboard } = require('electron');
           clipboard.writeText(params.srcURL);
-        }
-      }));
-      menu.append(new MenuItem({ type: 'separator' }));
-    }
-
-    if (params.selectionText) {
-      menu.append(new MenuItem({ role: 'copy' }));
-      menu.append(new MenuItem({
-        label: `Search X for "${params.selectionText.slice(0, 20)}..."`,
-        click: () => {
-          mainWindow.loadURL(`https://x.com/search?q=${encodeURIComponent(params.selectionText)}&f=live`);
         }
       }));
       menu.append(new MenuItem({ type: 'separator' }));
@@ -476,35 +551,6 @@ ipcMain.on('open-external-url', (event, url) => {
   }
 });
 
-// Media Downloader handler
-ipcMain.on('download-url', (event, { url, filename }) => {
-  if (!url || !mainWindow) return;
-
-  const downloadsDir = path.join(os.homedir(), 'Downloads');
-  if (!fs.existsSync(downloadsDir)) {
-    fs.mkdirSync(downloadsDir, { recursive: true });
-  }
-
-  const destPath = path.join(downloadsDir, filename);
-
-  mainWindow.webContents.session.downloadURL(url);
-  mainWindow.webContents.session.once('will-download', (e, item) => {
-    item.setSavePath(destPath);
-    item.once('done', (e, state) => {
-      if (state === 'completed') {
-        console.log('[X Desktop] Download completed:', destPath);
-      } else {
-        console.warn('[X Desktop] Download failed:', state);
-      }
-    });
-  });
-});
-
-// MPRIS updates from preload
-ipcMain.on('mpris-update', (event, state) => {
-  updateMprisState(state);
-});
-
 // DevTools toggle from renderer
 ipcMain.on('toggle-devtools', () => {
   if (mainWindow) {
@@ -514,6 +560,11 @@ ipcMain.on('toggle-devtools', () => {
 
 // App lifecycle
 app.whenReady().then(() => {
+  // Activate Network-Level Ad & Analytics Blocker
+  session.defaultSession.webRequest.onBeforeRequest({ urls: AD_TRACKER_PATTERNS }, (details, callback) => {
+    callback({ cancel: true });
+  });
+
   initMpris((action, arg) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (action === 'raise') {

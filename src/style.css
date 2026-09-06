@@ -1,7 +1,7 @@
 
-/* X Desktop - Clean Styling */
+/* X Desktop - Clean Styling & Translation Enhancements */
 
-/* Smooth native desktop scrollbars */
+/* 1. Smooth native desktop scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -20,9 +20,123 @@
   background: rgba(148, 163, 184, 0.45);
 }
 
-/* Hide app install banners only */
+/* 2. Hide app install banners & web promotions */
 [data-testid="app-install-banner"],
-[data-testid="install-app-banner"] {
+[data-testid="install-app-banner"],
+div[aria-label*="Get the app"],
+div[aria-label*="Install"],
+div[aria-label*="تثبيت التطبيق"],
+div[aria-label*="نزّل التطبيق"],
+a[href*="apps.apple.com"],
+a[href*="play.google.com"] {
   display: none !important;
+}
+
+/* 3. Hide Sidebar "Subscribe to Premium" promotional boxes */
+[data-testid="sidebarColumn"] aside:has(a[href*="/premium"]),
+[data-testid="sidebarColumn"] aside:has(a[href*="/i/premium_sign_up"]),
+div[aria-label*="Subscribe to Premium"],
+aside[aria-label*="Subscribe to Premium"] {
+  display: none !important;
+}
+
+/* 4. Inline Translation Button */
+.x-desktop-translate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid rgba(29, 155, 240, 0.4);
+  color: rgb(29, 155, 240);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.x-desktop-translate-btn:hover {
+  background: rgba(29, 155, 240, 0.12);
+  border-color: rgb(29, 155, 240);
+}
+
+/* 5. In-Place Arabic Translation Box */
+.x-desktop-translation-box {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #f1f5f9;
+  direction: rtl;
+  text-align: right;
+  animation: xFadeIn 0.25s ease forwards;
+}
+
+.x-desktop-translation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.x-desktop-toggle-original {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.x-desktop-toggle-original:hover {
+  color: #7dd3fc;
+}
+
+.x-desktop-translation-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
+  word-break: break-word;
+}
+
+/* 6. Desktop Toast Notification */
+.x-desktop-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  background: #0f172a;
+  border: 1px solid #38bdf8;
+  color: #f8fafc;
+  padding: 12px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  direction: rtl;
+  text-align: right;
+  max-width: 480px;
+  animation: xFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes xFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 

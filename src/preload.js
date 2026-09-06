@@ -62,7 +62,7 @@ document.addEventListener('click', (event) => {
   }
 }, true);
 
-// 4. Inject clean styles (smooth scrollbars)
+// 4. Inject custom styles (Clean view, translation box, smooth scrollbar)
 function injectStyles() {
   try {
     const stylePath = path.join(__dirname, 'style.css');
@@ -81,7 +81,121 @@ function injectStyles() {
   }
 }
 
-// 5. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only - Never overwrite video element properties)
+// 5. Toast Notification for Context-Menu Translations
+function showToast(message) {
+  let toast = document.querySelector('.x-desktop-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'x-desktop-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span>🌐</span> <div style="flex:1;">${message}</div>`;
+  setTimeout(() => {
+    if (toast && toast.parentElement) {
+      toast.parentElement.removeChild(toast);
+    }
+  }, 7000);
+}
+
+ipcRenderer.on('show-toast-message', (e, msg) => {
+  showToast(msg);
+});
+
+// 6. Inline Arabic Translation for Foreign Tweets
+function hasArabic(text) {
+  return /[\u0600-\u06FF]/.test(text);
+}
+
+function injectTranslateButtons() {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(tw => {
+    const textEl = tw.querySelector('[data-testid="tweetText"]');
+    if (!textEl || tw.querySelector('.x-desktop-translate-btn')) return;
+
+    const originalText = textEl.innerText.trim();
+    if (originalText.length < 5 || hasArabic(originalText)) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'x-desktop-translate-btn';
+    btn.innerHTML = '🌐 ترجمة إلى العربية';
+
+    let isTranslated = false;
+    let translationBox = null;
+    let cachedTranslation = '';
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isTranslated) {
+        if (translationBox) translationBox.style.display = 'none';
+        btn.innerHTML = '🌐 ترجمة إلى العربية';
+        isTranslated = false;
+        return;
+      }
+
+      if (cachedTranslation && translationBox) {
+        translationBox.style.display = 'block';
+        btn.innerHTML = '👁️ إخفاء الترجمة';
+        isTranslated = true;
+        return;
+      }
+
+      btn.innerHTML = '⏳ جاري الترجمة...';
+      btn.disabled = true;
+
+      try {
+        const translated = await ipcRenderer.invoke('translate-text', originalText);
+        cachedTranslation = translated;
+
+        translationBox = document.createElement('div');
+        translationBox.className = 'x-desktop-translation-box';
+        translationBox.innerHTML = `
+          <div class="x-desktop-translation-header">
+            <span>ترجمة آلية للعربية</span>
+            <button class="x-desktop-toggle-original">إخفاء</button>
+          </div>
+          <div class="x-desktop-translation-text">${translated}</div>
+        `;
+
+        const toggleBtn = translationBox.querySelector('.x-desktop-toggle-original');
+        toggleBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          translationBox.style.display = 'none';
+          btn.innerHTML = '🌐 ترجمة إلى العربية';
+          isTranslated = false;
+        });
+
+        textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
+        btn.innerHTML = '👁️ إخفاء الترجمة';
+        btn.disabled = false;
+        isTranslated = true;
+      } catch (err) {
+        btn.innerHTML = '⚠️ تعذرت الترجمة';
+        btn.disabled = false;
+      }
+    });
+
+    textEl.parentNode.insertBefore(btn, textEl.nextSibling);
+  });
+}
+
+// 7. Promoted Tweet Scrubber (Ad-Blocker)
+function scrubPromotedContent() {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(tw => {
+    const isPromoted = 
+      tw.querySelector('[data-testid="icon-promoted"]') ||
+      (tw.innerText && (tw.innerText.includes('Promoted') || tw.innerText.includes('مروّج') || tw.innerText.includes('إعلان مروّج')));
+
+    if (isPromoted && !tw.dataset.xScrubbed) {
+      tw.dataset.xScrubbed = 'true';
+      tw.style.display = 'none';
+    }
+  });
+}
+
+// 8. Media Tracking & MPRIS D-Bus Synchronization (Passive listeners only)
 let activeMedia = null;
 
 function setupMediaTracking() {
@@ -146,7 +260,6 @@ function sendMprisUpdate(playbackStatus) {
   });
 }
 
-// Listen for MPRIS controls from system D-Bus
 ipcRenderer.on('mpris-action', (e, action, arg) => {
   if (!activeMedia) {
     activeMedia = document.querySelector('video') || document.querySelector('audio');
@@ -171,7 +284,7 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
   }
 });
 
-// 6. Native Desktop Keyboard Shortcuts
+// 9. Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
@@ -187,19 +300,6 @@ window.addEventListener('keydown', (e) => {
     }
   }
 
-  // Ctrl+Shift+P: Toggle PiP on active video
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') {
-    e.preventDefault();
-    const vid = activeMedia || document.querySelector('video');
-    if (vid) {
-      if (document.pictureInPictureElement === vid) {
-        document.exitPictureInPicture().catch(() => {});
-      } else {
-        vid.requestPictureInPicture().catch(() => {});
-      }
-    }
-  }
-
   // Ctrl+Shift+I: DevTools
   if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') {
     e.preventDefault();
@@ -207,8 +307,24 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Periodic & Mutation Loop for translation and ad cleaning
+function runLoop() {
+  scrubPromotedContent();
+  injectTranslateButtons();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   injectStyles();
   setupMediaTracking();
+  runLoop();
+
+  const observer = new MutationObserver(() => {
+    runLoop();
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 });
 
