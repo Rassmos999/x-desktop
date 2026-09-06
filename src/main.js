@@ -1,11 +1,10 @@
 
-const { app, BrowserWindow, shell, ipcMain, session, Menu, MenuItem, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, session, Menu, MenuItem, Tray } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { initMpris, updateMprisState } = require('./mpris');
 
-// Handle CLI flags like --version
 if (process.argv.includes('--version') || process.argv.includes('-v')) {
   try {
     const pkg = require('../package.json');
@@ -17,6 +16,8 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
 }
 
 const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+const FIREFOX_UA = 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0';
+
 app.userAgentFallback = CHROME_UA;
 
 // Prevent transient D-Bus / socket disconnect notices from interrupting the app
@@ -35,12 +36,12 @@ app.setAppUserModelId('x-desktop');
 const userDataPath = path.join(app.getPath('appData'), 'x-desktop');
 app.setPath('userData', userDataPath);
 
-// Sandbox compatibility and memory stability on Linux user namespaces
+// Sandbox compatibility and memory stability on Linux
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu-sandbox');
 app.commandLine.appendSwitch('disable-dev-shm-usage');
 
-// Hardware acceleration, Wayland & VA-API video decoding flags
+// Hardware acceleration & Wayland flags
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 app.commandLine.appendSwitch(
   'enable-features',
@@ -70,6 +71,8 @@ const ALLOWED_AUTH_DOMAINS = [
   'google.com',
   'accounts.google.com',
   'gstatic.com',
+  'googleusercontent.com',
+  'googleapis.com',
   'apple.com',
   'appleid.apple.com'
 ];
@@ -133,19 +136,17 @@ function createWindow(targetUrl = 'https://x.com') {
 
   mainWindow.loadURL(targetUrl);
 
-  // Show window as soon as content is ready
   mainWindow.once('ready-to-show', () => {
     showAndFocusWindow();
   });
 
-  // Safety fallback: if ready-to-show is delayed by network, force show after 800ms
   setTimeout(() => {
     if (mainWindow && !mainWindow.isVisible()) {
       showAndFocusWindow();
     }
   }, 800);
 
-  // Handle external links vs internal X navigation
+  // Handle OAuth popups and navigation
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isAllowedDomain(url)) {
       mainWindow.loadURL(url);
@@ -155,7 +156,6 @@ function createWindow(targetUrl = 'https://x.com') {
     return { action: 'deny' };
   });
 
-  // Minimize to tray on close
   mainWindow.on('close', (event) => {
     if (!app.isQuitting) {
       event.preventDefault();
@@ -163,14 +163,13 @@ function createWindow(targetUrl = 'https://x.com') {
     }
   });
 
-  // Title sync
   mainWindow.on('page-title-updated', (e, title) => {
     if (!title.includes('X') && !title.includes('Twitter')) {
       mainWindow.setTitle(title + ' / X');
     }
   });
 
-  // Native Context Menu (Right Click)
+  // Context Menu
   mainWindow.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
 
@@ -316,9 +315,7 @@ function createTray() {
     { type: 'separator' },
     {
       label: 'Open X',
-      click: () => {
-        showAndFocusWindow();
-      }
+      click: () => showAndFocusWindow()
     },
     {
       label: 'Compose Post...',
@@ -419,6 +416,27 @@ ipcMain.on('toggle-devtools', () => {
 
 // App lifecycle
 app.whenReady().then(() => {
+  // Bypass Google OAuth "This browser or app may not be secure" block
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    const url = details.url;
+    if (
+      url.includes('google.com') ||
+      url.includes('accounts.google') ||
+      url.includes('gstatic.com') ||
+      url.includes('googleapis.com') ||
+      url.includes('googleusercontent.com')
+    ) {
+      details.requestHeaders['User-Agent'] = FIREFOX_UA;
+      delete details.requestHeaders['Sec-CH-UA'];
+      delete details.requestHeaders['Sec-CH-UA-Mobile'];
+      delete details.requestHeaders['Sec-CH-UA-Platform'];
+      delete details.requestHeaders['X-Electron'];
+    } else {
+      details.requestHeaders['User-Agent'] = CHROME_UA;
+    }
+    callback({ cancel: false, requestHeaders: details.requestHeaders });
+  });
+
   initMpris((action, arg) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (action === 'raise') {
