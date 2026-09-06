@@ -1,12 +1,12 @@
 // Niri Window Rules for X Desktop Client
 
 window-rule {
-    match app-id="^x-desktop$"
+    match app-id="^(x|x-desktop)$"
     default-column-width {}
 }
 
 window-rule {
-    match app-id="^x-desktop$" title="^X Picture in Picture$"
+    match app-id="^(x|x-desktop)$" title="^X Picture in Picture$"
     open-floating true
     default-floating-position x=24 y=24 relative-to="bottom-right"
 }

@@ -5,8 +5,18 @@ const fs = require('fs');
 const os = require('os');
 const { initMpris, updateMprisState } = require('./mpris');
 
-const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+// Handle CLI flags like --version
+if (process.argv.includes('--version') || process.argv.includes('-v')) {
+  try {
+    const pkg = require('../package.json');
+    console.log(`X Desktop v${pkg.version}`);
+  } catch (e) {
+    console.log('X Desktop v1.0.0');
+  }
+  process.exit(0);
+}
 
+const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
 app.userAgentFallback = CHROME_UA;
 
 // Prevent transient D-Bus / socket disconnect notices from interrupting the app
@@ -25,9 +35,10 @@ app.setAppUserModelId('x-desktop');
 const userDataPath = path.join(app.getPath('appData'), 'x-desktop');
 app.setPath('userData', userDataPath);
 
-// Sandbox compatibility on Linux user namespaces
+// Sandbox compatibility and memory stability on Linux user namespaces
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('disable-dev-shm-usage');
 
 // Hardware acceleration, Wayland & VA-API video decoding flags
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
@@ -51,6 +62,27 @@ if (!gotTheLock) {
 let mainWindow = null;
 let tray = null;
 
+const ALLOWED_AUTH_DOMAINS = [
+  'x.com',
+  'twitter.com',
+  'twimg.com',
+  't.co',
+  'google.com',
+  'accounts.google.com',
+  'gstatic.com',
+  'apple.com',
+  'appleid.apple.com'
+];
+
+function isAllowedDomain(url) {
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_AUTH_DOMAINS.some(d => parsed.hostname === d || parsed.hostname.endsWith('.' + d));
+  } catch (e) {
+    return false;
+  }
+}
+
 function parseTargetUrl(argv) {
   for (const arg of argv) {
     if (arg && (arg.startsWith('https://x.com') || arg.startsWith('https://twitter.com'))) {
@@ -61,7 +93,21 @@ function parseTargetUrl(argv) {
 }
 
 function getIconPath(name = 'x-desktop.png') {
-  return path.join(__dirname, '..', 'data', name);
+  const p = path.join(__dirname, '..', 'data', name);
+  return fs.existsSync(p) ? p : undefined;
+}
+
+function showAndFocusWindow() {
+  if (!mainWindow) return;
+  if (!mainWindow.isVisible()) {
+    mainWindow.show();
+  }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.focus();
+  mainWindow.setAlwaysOnTop(true);
+  mainWindow.setAlwaysOnTop(false);
 }
 
 function createWindow(targetUrl = 'https://x.com') {
@@ -87,13 +133,21 @@ function createWindow(targetUrl = 'https://x.com') {
 
   mainWindow.loadURL(targetUrl);
 
+  // Show window as soon as content is ready
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    showAndFocusWindow();
   });
+
+  // Safety fallback: if ready-to-show is delayed by network, force show after 800ms
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      showAndFocusWindow();
+    }
+  }, 800);
 
   // Handle external links vs internal X navigation
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.includes('x.com') || url.includes('twitter.com')) {
+    if (isAllowedDomain(url)) {
       mainWindow.loadURL(url);
       return { action: 'deny' };
     }
@@ -201,7 +255,7 @@ function createWindow(targetUrl = 'https://x.com') {
 
   // Offline / Network Recovery Screen
   mainWindow.webContents.on('did-fail-load', (e, errorCode, errorDescription, validatedURL) => {
-    if (errorCode === -3) return; // Ignore aborted requests
+    if (errorCode === -3) return;
     mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`
       <!DOCTYPE html>
       <html>
@@ -263,10 +317,7 @@ function createTray() {
     {
       label: 'Open X',
       click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          mainWindow.focus();
-        }
+        showAndFocusWindow();
       }
     },
     {
@@ -274,9 +325,8 @@ function createTray() {
       accelerator: 'CmdOrCtrl+N',
       click: () => {
         if (mainWindow) {
-          mainWindow.show();
+          showAndFocusWindow();
           mainWindow.loadURL('https://x.com/compose/post');
-          mainWindow.focus();
         }
       }
     },
@@ -284,9 +334,8 @@ function createTray() {
       label: 'Notifications',
       click: () => {
         if (mainWindow) {
-          mainWindow.show();
+          showAndFocusWindow();
           mainWindow.loadURL('https://x.com/notifications');
-          mainWindow.focus();
         }
       }
     },
@@ -294,9 +343,8 @@ function createTray() {
       label: 'Direct Messages',
       click: () => {
         if (mainWindow) {
-          mainWindow.show();
+          showAndFocusWindow();
           mainWindow.loadURL('https://x.com/messages');
-          mainWindow.focus();
         }
       }
     },
@@ -327,8 +375,7 @@ function createTray() {
       if (mainWindow.isVisible()) {
         mainWindow.hide();
       } else {
-        mainWindow.show();
-        mainWindow.focus();
+        showAndFocusWindow();
       }
     }
   });
@@ -375,8 +422,7 @@ app.whenReady().then(() => {
   initMpris((action, arg) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (action === 'raise') {
-        mainWindow.show();
-        mainWindow.focus();
+        showAndFocusWindow();
       } else if (action === 'quit') {
         app.isQuitting = true;
         app.quit();
@@ -392,13 +438,11 @@ app.whenReady().then(() => {
 
   app.on('second-instance', (event, commandLine) => {
     if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
+      showAndFocusWindow();
       const target = parseTargetUrl(commandLine);
       if (target && target !== 'https://x.com') {
         mainWindow.loadURL(target);
       }
-      mainWindow.show();
-      mainWindow.focus();
     }
   });
 });
