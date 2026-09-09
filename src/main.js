@@ -36,14 +36,15 @@ app.setAppUserModelId('x-desktop');
 const userDataPath = path.join(app.getPath('appData'), 'x-desktop');
 app.setPath('userData', userDataPath);
 
-// Sandbox compatibility on Linux user namespaces
-app.commandLine.appendSwitch('no-sandbox');
-app.commandLine.appendSwitch('disable-gpu-sandbox');
-
-// Hardware acceleration & clean Wayland flags
-app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
-app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
-app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox,Vulkan');
+if (process.platform === 'linux') {
+  // Sandbox compatibility on Linux user namespaces
+  app.commandLine.appendSwitch('no-sandbox');
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
+  // Hardware acceleration & clean Wayland flags
+  app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
+  app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
+  app.commandLine.appendSwitch('disable-features', 'AudioServiceSandbox,Vulkan');
+}
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 // Single instance lock
@@ -131,6 +132,10 @@ function parseTargetUrl(argv) {
 }
 
 function getIconPath(name = 'x-desktop.png') {
+  if (process.platform === 'win32') {
+    const icoPath = path.join(__dirname, '..', 'data', 'x-desktop.ico');
+    if (fs.existsSync(icoPath)) return icoPath;
+  }
   const p = path.join(__dirname, '..', 'data', name);
   return fs.existsSync(p) ? p : undefined;
 }
@@ -187,6 +192,9 @@ function createWindow(targetUrl = 'https://x.com') {
   if (fs.existsSync(stylePath)) {
     const css = fs.readFileSync(stylePath, "utf8");
     mainWindow.webContents.on("dom-ready", () => {
+      mainWindow.webContents.insertCSS(css);
+    });
+    mainWindow.webContents.on("did-navigate-in-page", () => {
       mainWindow.webContents.insertCSS(css);
     });
   }
@@ -629,4 +637,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-

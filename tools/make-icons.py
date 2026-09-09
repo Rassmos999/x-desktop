@@ -39,6 +39,17 @@ def main():
     tray_png = os.path.join(BASE_DIR, "data", "x-tray.png")
     subprocess.run(["rsvg-convert", "-w", "24", "-h", "24", tray_svg, "-o", tray_png], check=True)
 
+    # Windows ICO format
+    ico_path = os.path.join(BASE_DIR, "data", "x-desktop.ico")
+    png_512 = os.path.join(BASE_DIR, "data", "x-desktop.png")
+    try:
+        subprocess.run(["magick", png_512, "-define", "icon:auto-resize=256,128,64,48,32,16", ico_path], check=True)
+    except Exception:
+        try:
+            subprocess.run(["convert", png_512, "-define", "icon:auto-resize=256,128,64,48,32,16", ico_path], check=True)
+        except Exception as e:
+            print("ICO generation skipped:", e)
+
     print("All X Desktop icons generated successfully.")
 
 if __name__ == "__main__":

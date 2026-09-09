@@ -93,6 +93,7 @@ assert(fs.existsSync(path.join(packDir, 'PKGBUILD')), 'PKGBUILD must exist');
 assert(fs.existsSync(path.join(packDir, 'build-arch.sh')), 'build-arch.sh must exist');
 assert(fs.existsSync(path.join(packDir, 'build-deb.sh')), 'build-deb.sh must exist');
 assert(fs.existsSync(path.join(packDir, 'build-rpm.sh')), 'build-rpm.sh must exist');
+assert(fs.existsSync(path.join(packDir, 'build-win.sh')), 'build-win.sh must exist');
 assert(fs.existsSync(path.join(packDir, 'x-desktop.spec')), 'x-desktop.spec must exist');
 assert(fs.existsSync(path.join(ROOT, 'tools', 'setup-ai-engine.sh')), 'setup-ai-engine.sh must exist');
 console.log('   ✅ Packaging suite verified.');

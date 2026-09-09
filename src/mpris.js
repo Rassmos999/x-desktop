@@ -1,5 +1,12 @@
 
-const Mpris = require('mpris-service');
+let Mpris = null;
+if (process.platform === 'linux') {
+  try {
+    Mpris = require('mpris-service');
+  } catch (e) {
+    Mpris = null;
+  }
+}
 
 let player = null;
 let currentMetadata = {};
@@ -13,6 +20,7 @@ let isPlaying = false;
  * @param {(action: string, arg?: any) => void} onAction - Callback for player actions
  */
 function initMpris(onAction) {
+  if (process.platform !== 'linux' || !Mpris) return;
   try {
     player = Mpris({
       name: 'x-desktop',
@@ -120,4 +128,3 @@ module.exports = {
   initMpris,
   updateMprisState
 };
-

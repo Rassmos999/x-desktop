@@ -3,7 +3,7 @@ const { ipcRenderer } = require('electron');
 
 // Strictly guard: only execute on X/Twitter domains
 const isXDomain = window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com');
-if (!isXDomain) {
+if (!isXDomain && window.location.hostname !== '' && window.location.protocol.startsWith('http')) {
   return;
 }
 
@@ -71,8 +71,13 @@ function formatArabicBiDi(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
+  // 1. Isolate full URLs (https://, http://)
   escaped = escaped.replace(/(https?:\/\/[^\s<]+)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
+
+  // 2. Isolate all web domains with ANY 2-16 letter TLD (e.g. .supply, .design, .lol, .ai, .com)
   escaped = escaped.replace(/(?<![\/\w])([a-zA-Z0-9-]+\.[a-zA-Z]{2,16}(?:\/[^\s<]*)?)/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
+
+  // 3. Isolate @mentions
   escaped = escaped.replace(/(?<!\w)(@[a-zA-Z0-9_]{1,30})/g, '<bdi dir="ltr" class="x-desktop-ltr-token">$1</bdi>');
 
   return escaped;
@@ -120,92 +125,219 @@ function getCleanTweetText(textEl) {
   }
 }
 
+function getTweetKey(tw, textEl) {
+  if (!tw) return "";
+  const links = tw.querySelectorAll("a[href*='/status/']");
+  for (const a of links) {
+    const m = (a.getAttribute("href") || "").match(/\/status\/(\d+)/);
+    if (m && m[1]) return m[1];
+  }
+  const urlMatch = window.location.pathname.match(/\/status\/(\d+)/);
+  if (urlMatch && urlMatch[1]) {
+    const mainArticle = document.querySelector("article[data-testid='tweet']");
+    if (tw === mainArticle) return urlMatch[1];
+  }
+  const txt = (textEl ? textEl.innerText : "") || "";
+  return txt.slice(0, 100).trim();
+}
+
+const persistentTranslations = new Map();
+
+function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
+  const link = linkEl || tw.querySelector(".x-desktop-translate-link");
+  let translationBox = tw.querySelector(".x-desktop-translation-inline");
+  if (translationBox) return translationBox;
+
+  translationBox = document.createElement("div");
+  translationBox.className = "x-desktop-translation-inline";
+
+  // Isolate clicks completely so tweet navigation never triggers
+  translationBox.addEventListener("click", (ev) => ev.stopPropagation());
+  translationBox.addEventListener("mousedown", (ev) => ev.stopPropagation());
+  translationBox.addEventListener("mouseup", (ev) => ev.stopPropagation());
+  translationBox.addEventListener("pointerdown", (ev) => ev.stopPropagation());
+
+  const isFast = (cacheObj.currentActiveMode === "auto") || (cacheObj.actualEngine === "precise" || cacheObj.actualEngine === "web");
+  const initialText = (cacheObj.currentActiveMode === "auto" && cacheObj.cachedFastText) ? cacheObj.cachedFastText : cacheObj.cachedAiText;
+  const initialBadge = isFast ? "الترجمة السريعة" : "ترجمة الذكاء الاصطناعي";
+  const initialRephraseBtn = isFast ? "ترجمة الذكاء الاصطناعي" : "الترجمة السريعة";
+
+  translationBox.innerHTML = `
+    <div class="x-desktop-translation-meta">
+      <span class="x-desktop-badge-text">${initialBadge}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="x-desktop-show-original-link x-desktop-rephrase-ai">${initialRephraseBtn}</button>
+        <button class="x-desktop-show-original-link x-desktop-hide-translation">عرض الأصل</button>
+      </div>
+    </div>
+    <div class="x-desktop-translated-text">${formatArabicBiDi(initialText)}</div>
+  `;
+
+  const rephraseBtn = translationBox.querySelector(".x-desktop-rephrase-ai");
+  const showOriginalBtn = translationBox.querySelector(".x-desktop-hide-translation");
+  const textContainer = translationBox.querySelector(".x-desktop-translated-text");
+  const badgeText = translationBox.querySelector(".x-desktop-badge-text");
+
+  rephraseBtn.addEventListener("click", async (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    rephraseBtn.disabled = true;
+    const nextMode = (cacheObj.currentActiveMode === "ai") ? "auto" : "ai";
+
+    if (nextMode === "auto" && cacheObj.cachedFastText) {
+      cacheObj.currentActiveMode = "auto";
+      textContainer.innerHTML = formatArabicBiDi(cacheObj.cachedFastText);
+      badgeText.textContent = "الترجمة السريعة";
+      rephraseBtn.innerHTML = "ترجمة الذكاء الاصطناعي";
+      rephraseBtn.disabled = false;
+      return;
+    }
+    if (nextMode === "ai" && cacheObj.cachedAiText) {
+      cacheObj.currentActiveMode = "ai";
+      textContainer.innerHTML = formatArabicBiDi(cacheObj.cachedAiText);
+      badgeText.textContent = "ترجمة الذكاء الاصطناعي";
+      rephraseBtn.innerHTML = "الترجمة السريعة";
+      rephraseBtn.disabled = false;
+      return;
+    }
+
+    rephraseBtn.innerHTML = "جاري المعالجة...";
+    try {
+      const latestText = getCleanTweetText(textEl) || cacheObj.fullOriginalText;
+      const rephraseRes = await ipcRenderer.invoke("translate-text", { text: latestText, mode: nextMode });
+      const newText = typeof rephraseRes === "object" ? rephraseRes.text : rephraseRes;
+      textContainer.innerHTML = formatArabicBiDi(newText);
+
+      const engineUsed = typeof rephraseRes === 'object' ? rephraseRes.engine : '';
+      cacheObj.actualEngine = engineUsed;
+      const isActualFast = (nextMode === "auto") || (engineUsed === "precise" || engineUsed === "web");
+
+      if (nextMode === "ai") {
+        cacheObj.cachedAiText = newText;
+        cacheObj.currentActiveMode = "ai";
+      } else {
+        cacheObj.cachedFastText = newText;
+        cacheObj.currentActiveMode = "auto";
+      }
+
+      badgeText.textContent = isActualFast ? "الترجمة السريعة" : "ترجمة الذكاء الاصطناعي";
+      rephraseBtn.innerHTML = isActualFast ? "ترجمة الذكاء الاصطناعي" : "الترجمة السريعة";
+    } catch (err) {
+      rephraseBtn.innerHTML = "تعذر التبديل";
+    } finally {
+      rephraseBtn.disabled = false;
+    }
+  });
+
+  showOriginalBtn.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    cacheObj.rendered = false;
+    translationBox.remove();
+    if (link) {
+      link.style.display = "inline-block";
+      link.innerHTML = "ترجمة المنشور";
+      link.disabled = false;
+    }
+  });
+
+  textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
+  return translationBox;
+}
+
 function injectTranslateButtons() {
-  const tweets = document.querySelectorAll(article[data-testid=tweet]);
+  const tweets = document.querySelectorAll("article[data-testid='tweet']");
   tweets.forEach(tw => {
-    const textEl = tw.querySelector([data-testid=tweetText]);
-    if (!textEl || tw.querySelector(".x-desktop-translate-link") || tw.querySelector(".x-desktop-translation-inline")) return;
+    const textEl = tw.querySelector("[data-testid='tweetText']");
+    if (!textEl) return;
 
     const originalText = getCleanTweetText(textEl);
-    if (originalText.length < 3 || hasArabic(originalText)) return;
+    const tweetKey = getTweetKey(tw, textEl);
+
+    const existingBox = tw.querySelector(".x-desktop-translation-inline");
+    const existingLink = tw.querySelector(".x-desktop-translate-link");
+    if (existingBox) return;
+
+    // If already translated and cached for this tweet, auto-restore
+    if (tweetKey && persistentTranslations.has(tweetKey)) {
+      const cachedData = persistentTranslations.get(tweetKey);
+      if (cachedData && cachedData.rendered) {
+        if (existingLink) existingLink.style.display = "none";
+        renderTranslationBox(tw, textEl, tweetKey, cachedData);
+        return;
+      }
+    }
+
+    if (existingLink) return;
+    if (originalText.length < 2) return;
+
+    // Only skip if predominantly Arabic
+    const arabicMatch = originalText.match(/[\u0600-\u06FF]/g);
+    const arabicCount = arabicMatch ? arabicMatch.length : 0;
+    const totalLetters = (originalText.match(/[\p{L}]/gu) || []).length;
+    if (totalLetters > 0 && (arabicCount / totalLetters) > 0.4) {
+      return;
+    }
 
     const link = document.createElement("button");
     link.className = "x-desktop-translate-link";
     link.innerHTML = "ترجمة المنشور";
 
-    let translationBox = null;
-    let cachedTranslation = "";
-
     link.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (cachedTranslation && translationBox) {
-        translationBox.style.display = "block";
+      if (tweetKey && persistentTranslations.has(tweetKey)) {
+        const cachedData = persistentTranslations.get(tweetKey);
+        cachedData.rendered = true;
+        renderTranslationBox(tw, textEl, tweetKey, cachedData, link);
         link.style.display = "none";
         return;
       }
 
-      link.innerHTML = "جاري الترجمة...";
+      // Auto-expand Show more / عرض المزيد to get complete text
+      const showMoreSelectors = [
+        '[data-testid="tweet-text-show-more-link"]',
+        'button[data-testid="tweet-text-show-more-link"]'
+      ];
+      for (const sel of showMoreSelectors) {
+        const el = tw.querySelector(sel);
+        if (el) {
+          try { el.click(); } catch (err) {}
+          break;
+        }
+      }
+      const spans = tw.querySelectorAll("span");
+      for (const sp of spans) {
+        const txt = (sp.textContent || "").trim();
+        if (txt === "Show more" || txt === "عرض المزيد") {
+          try { sp.click(); } catch (err) {}
+          break;
+        }
+      }
+
+      await new Promise(r => setTimeout(r, 80));
+      const fullOriginalText = getCleanTweetText(textEl) || originalText;
+
+      link.innerHTML = "جاري الترجمة بالذكاء الاصطناعي...";
       link.disabled = true;
 
       try {
-        const res = await ipcRenderer.invoke("translate-text", { text: originalText, mode: "auto" });
+        const res = await ipcRenderer.invoke("translate-text", { text: fullOriginalText, mode: "ai" });
         const translatedText = typeof res === "object" ? res.text : res;
-        const isQwen = typeof res === "object" && res.engine === "qwen3";
-        cachedTranslation = translatedText;
+        const engineUsed = typeof res === "object" ? res.engine : "";
 
-        translationBox = document.createElement("div");
-        translationBox.className = "x-desktop-translation-inline";
-        translationBox.innerHTML = `
-          <div class="x-desktop-translation-meta">
-            <span class="x-desktop-badge-text">${isQwen ? "🧠 صياغة Qwen3" : "ترجمة دقيقة"}</span>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <button class="x-desktop-show-original-link x-desktop-rephrase-ai">${isQwen ? "⚡ ترجمة دقيقة" : "🧠 صياغة Qwen3"}</button>
-              <button class="x-desktop-show-original-link">عرض الأصل</button>
-            </div>
-          </div>
-          <div class="x-desktop-translated-text">${formatArabicBiDi(translatedText)}</div>
-        `;
+        const cacheObj = {
+          rendered: true,
+          currentActiveMode: "ai",
+          actualEngine: engineUsed,
+          cachedAiText: translatedText,
+          cachedFastText: (engineUsed === "precise" || engineUsed === "web") ? translatedText : "",
+          fullOriginalText: fullOriginalText
+        };
+        if (tweetKey) persistentTranslations.set(tweetKey, cacheObj);
 
-        const rephraseBtn = translationBox.querySelector(".x-desktop-rephrase-ai");
-        const showOriginalBtn = translationBox.querySelectorAll(".x-desktop-show-original-link")[1];
-        const textContainer = translationBox.querySelector(".x-desktop-translated-text");
-        const badgeText = translationBox.querySelector(".x-desktop-badge-text");
-
-        rephraseBtn.addEventListener("click", async (ev) => {
-          ev.stopPropagation();
-          rephraseBtn.disabled = true;
-          const currentMode = badgeText.textContent.includes("Qwen3") ? "auto" : "ai";
-          rephraseBtn.innerHTML = "⏳ جاري المعالجة...";
-
-          try {
-            const rephraseRes = await ipcRenderer.invoke("translate-text", { text: originalText, mode: currentMode });
-            const newText = typeof rephraseRes === "object" ? rephraseRes.text : rephraseRes;
-            textContainer.innerHTML = formatArabicBiDi(newText);
-            if (currentMode === "ai") {
-              badgeText.textContent = "🧠 صياغة Qwen3";
-              rephraseBtn.innerHTML = "⚡ ترجمة دقيقة";
-            } else {
-              badgeText.textContent = "ترجمة دقيقة";
-              rephraseBtn.innerHTML = "🧠 صياغة Qwen3";
-            }
-          } catch (err) {
-            rephraseBtn.innerHTML = "⚠️ خطأ";
-          } finally {
-            rephraseBtn.disabled = false;
-          }
-        });
-
-        showOriginalBtn.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          translationBox.style.display = "none";
-          link.style.display = "inline-block";
-          link.innerHTML = "ترجمة المنشور";
-          link.disabled = false;
-        });
-
-        textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
+        renderTranslationBox(tw, textEl, tweetKey, cacheObj, link);
         link.style.display = "none";
       } catch (err) {
         link.innerHTML = "تعذرت الترجمة";
@@ -216,6 +348,7 @@ function injectTranslateButtons() {
     textEl.parentNode.insertBefore(link, textEl.nextSibling);
   });
 }
+
 
 // 7. Vision Image Translation Action in Tweets
 function injectImageTranslateButtons() {
@@ -315,27 +448,33 @@ function injectImageTranslateButtons() {
 function isAdTweet(article) {
   if (article.querySelector('[data-testid="icon-promoted"]')) return true;
 
-  if (article.querySelector('[aria-label*="Promoted"], [aria-label*="إعلان"], [aria-label*="Sponsored"], [aria-label*="Boosted"]')) {
+  if (article.querySelector('[aria-label*="Promoted"], [aria-label*="إعلان"], [aria-label*="Sponsored"], [aria-label*="Boosted"], [aria-label*="مُعزّز"], [aria-label*="Ad"], [aria-label*="مروّج"]')) {
     return true;
   }
 
-  const spans = article.querySelectorAll('span, div');
-  for (let i = 0; i < spans.length; i++) {
-    const el = spans[i];
-    if (el.children.length === 0) {
-      const t = el.textContent ? el.textContent.trim() : '';
-      if (
-        t === 'Ad' ||
-        t === 'مروّج' ||
-        t === 'Sponsored' ||
-        t === 'Promoted' ||
-        t === 'Boosted' ||
-        t === 'مُعزّز' ||
-        t === 'إعلان' ||
-        t === 'إعلان ممول'
-      ) {
-        return true;
-      }
+  // Check all elements in article for Ad badges
+  const allElements = article.querySelectorAll('span, div, svg');
+  for (let i = 0; i < allElements.length; i++) {
+    const el = allElements[i];
+    const aria = el.getAttribute('aria-label');
+    if (aria && /\b(Ad|Boosted|Sponsored|Promoted|إعلان|مروّج|مُعزّز)\b/i.test(aria)) {
+      return true;
+    }
+
+    const t = (el.innerText || el.textContent || '').trim();
+    if (
+      t === 'Ad' ||
+      t === 'مروّج' ||
+      t === 'Sponsored' ||
+      t === 'Promoted' ||
+      t === 'Boosted' ||
+      t === 'مُعزّز' ||
+      t === 'إعلان' ||
+      t === 'إعلان ممول' ||
+      t === 'Ad ·' ||
+      t === '· Ad'
+    ) {
+      return true;
     }
   }
 
@@ -486,4 +625,3 @@ document.addEventListener('DOMContentLoaded', () => {
     subtree: true
   });
 });
-

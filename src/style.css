@@ -55,6 +55,8 @@ aside[aria-label*="Subscribe to Premium"] {
   cursor: pointer;
   user-select: none;
   transition: opacity 0.15s ease;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .x-desktop-translate-link:hover {
@@ -70,6 +72,8 @@ aside[aria-label*="Subscribe to Premium"] {
   direction: rtl;
   text-align: right;
   animation: xFadeIn 0.2s ease forwards;
+  user-select: text;
+  cursor: auto;
 }
 
 .x-desktop-translation-meta {
@@ -104,6 +108,10 @@ aside[aria-label*="Subscribe to Premium"] {
   color: rgb(231, 233, 234);
   word-break: break-word;
   white-space: pre-wrap;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  user-select: text;
 }
 
 /* 6. Desktop Toast Notification */

@@ -99,7 +99,10 @@ package-deb:
 package-rpm:
 	packaging/build-rpm.sh
 
-package: package-deb package-rpm package-arch
+package-win:
+	packaging/build-win.sh
+
+package: package-deb package-rpm package-arch package-win
 	@echo "All packages generated in dist/:"
 	@ls -lh dist/
 
@@ -110,4 +113,3 @@ clean:
 	python3 -c "import shutil, os; [shutil.rmtree(p, ignore_errors=True) for p in ['node_modules', 'dist', 'data/icons/hicolor']]"
 
 .PHONY: all icons install uninstall run clean package package-arch package-deb package-rpm
-

@@ -10,6 +10,20 @@ const DASHBOARD_HTML_PATH = path.join(__dirname, 'dashboard', 'index.html');
 
 let serverInstance = null;
 
+function getActiveModelName() {
+  try {
+    const res = execSync('curl -s http://127.0.0.1:28491/v1/models', { timeout: 1000 }).toString();
+    const data = JSON.parse(res);
+    const modelId = data?.data?.[0]?.id || data?.models?.[0]?.name || '';
+    if (modelId.includes('gemma-4')) return 'Gemma-4-E2B';
+    if (modelId.includes('Qwen3')) return 'Qwen3-VL';
+    if (modelId) return path.basename(modelId, '.gguf');
+    return 'AI Engine';
+  } catch (e) {
+    return 'Gemma-4-E2B';
+  }
+}
+
 function getGpuStats() {
   try {
     const out = execSync('nvidia-smi --query-gpu=memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits', { timeout: 1500 }).toString().trim();
@@ -54,18 +68,40 @@ function startWebUiServer() {
       return;
     }
 
+    // Static dashboard assets (split CSS/JS). Allowlist only — no traversal.
+    if ((url.pathname === '/dashboard.css' || url.pathname === '/dashboard.js') && req.method === 'GET') {
+      try {
+        var assetPath = path.join(__dirname, 'dashboard', path.basename(url.pathname));
+        var asset = fs.readFileSync(assetPath, 'utf8');
+        res.writeHead(200, {
+          'Content-Type': url.pathname.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
+          'Cache-Control': 'no-store'
+        });
+        res.end(asset);
+      } catch (err) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Dashboard asset missing: ' + err.message);
+      }
+      return;
+    }
+
     // Telemetry API
     if (url.pathname === '/api/telemetry') {
       const gpu = getGpuStats();
       const telemetry = aiEngine.getTelemetry();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({
+        activeModel: getActiveModelName(),
         vramUsed: gpu.used,
         vramTotal: gpu.total,
         gpuTemp: gpu.temp,
-        tokensPerSec: telemetry.tokensPerSec || 112,
+        tokensPerSec: telemetry.tokensPerSec || 28,
+        totalContext: telemetry.totalContext || 8192,
         totalTokens: telemetry.totalTokens || 0,
         requestCount: telemetry.requestCount || 0,
+        cacheSize: telemetry.cacheSize || 0,
+        cacheHits: telemetry.cacheHits || 0,
+        history: telemetry.history || [],
         contextMap: telemetry.lastContextMap || {
           system: 85,
           input: 120,
@@ -82,9 +118,9 @@ function startWebUiServer() {
       req.on('data', chunk => body += chunk);
       req.on('end', async () => {
         try {
-          const { text } = JSON.parse(body);
+          const { text, mode } = JSON.parse(body);
           const t0 = Date.now();
-          const translation = await aiEngine.translate(text);
+          const translation = await aiEngine.translate(text, mode || 'ai');
           const latency = Date.now() - t0;
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ translation, latency }));
@@ -129,4 +165,3 @@ module.exports = {
   startWebUiServer,
   WEB_UI_PORT
 };
-
