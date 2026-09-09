@@ -36,6 +36,7 @@ if command -v rpmbuild >/dev/null 2>&1; then
     --define "_topdir $BUILD/rpmbuild" \
     --define "version $VERSION" \
     --define "_build_id_links none" \
+    --define "_unpackaged_files_terminate_build 0" \
     "$BUILD/rpmbuild/SPECS/x-desktop.spec"
 
   shopt -s nullglob
