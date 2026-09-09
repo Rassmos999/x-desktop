@@ -77,7 +77,7 @@ jobs:
       - name: Install system tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y librsvg2-bin imagemagick dpkg-dev
+          sudo apt-get install -y librsvg2-bin imagemagick dpkg-dev rpm
 
       - name: Build packages
         run: |
@@ -94,6 +94,7 @@ jobs:
           path: |
             dist/*.deb
             dist/*.tar.gz
+            dist/*.rpm
 
   release:
     needs: [build-windows, build-linux]

@@ -20,7 +20,7 @@ fi
 if command -v rpmbuild >/dev/null 2>&1; then
   SOURCE_TREE="$BUILD/x-desktop-$VERSION"
   mkdir -p "$SOURCE_TREE"
-  cp -a "$ROOT/package.json" "$ROOT/Makefile" "$ROOT/src" "$ROOT/data" "$ROOT/tools" "$SOURCE_TREE/"
+  cp -a "$ROOT/package.json" "$ROOT/Makefile" "$ROOT/README.md" "$ROOT/src" "$ROOT/data" "$ROOT/tools" "$SOURCE_TREE/"
   if [[ -d "$ROOT/node_modules" ]]; then
     cp -a "$ROOT/node_modules" "$SOURCE_TREE/"
   fi
@@ -51,4 +51,3 @@ else
   tar -C "$STAGE" -czf "$TAR_OUT" usr
   echo "✅ Created staged package: $TAR_OUT"
 fi
-
