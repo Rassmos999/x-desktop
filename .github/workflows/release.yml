@@ -1,0 +1,132 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Windows Portable Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          ELECTRON_VER=41.10.7
+          ZIP_NAME="electron-v${ELECTRON_VER}-win32-x64.zip"
+          echo "==> Downloading official Electron Windows shell..."
+          curl -L -C - --retry 5 -o "$ZIP_NAME" "https://github.com/electron/electron/releases/download/v${ELECTRON_VER}/$ZIP_NAME"
+          mkdir -p stage/x-desktop-win32-x64
+          unzip -q -o "$ZIP_NAME" -d stage/x-desktop-win32-x64
+          mv stage/x-desktop-win32-x64/electron.exe stage/x-desktop-win32-x64/x-desktop.exe
+          mkdir -p stage/x-desktop-win32-x64/resources/app
+          cp package.json stage/x-desktop-win32-x64/resources/app/
+          cp -r src stage/x-desktop-win32-x64/resources/app/
+          cp -r data stage/x-desktop-win32-x64/resources/app/
+          cp -r node_modules stage/x-desktop-win32-x64/resources/app/
+          rm -rf stage/x-desktop-win32-x64/resources/app/node_modules/electron stage/x-desktop-win32-x64/resources/app/node_modules/.bin/electron
+          cat > stage/x-desktop-win32-x64/x-desktop.bat <<'BAT'
+          @echo off
+          start "" "%~dp0x-desktop.exe" %*
+          BAT
+          cat > stage/x-desktop-win32-x64/install-shortcut.bat <<'BAT'
+          @echo off
+          setlocal
+          set "TARGET=%~dp0x-desktop.exe"
+          set "ICON=%~dp0resources\app\data\x-desktop.ico"
+          set "SHORTCUT=%USERPROFILE%\Desktop\X Desktop.lnk"
+          powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%SHORTCUT%'); $s.TargetPath = '%TARGET%'; $s.IconLocation = '%ICON%'; $s.Save()"
+          echo Shortcut created successfully on Desktop!
+          pause
+          BAT
+          (cd stage && 7z a -tzip "../dist/x-desktop-windows-x64.zip" x-desktop-win32-x64)
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-desktop-windows-x64
+          path: dist/x-desktop-windows-x64.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin imagemagick dpkg-dev
+
+      - name: Build packages
+        run: |
+          npm install --no-audit --no-fund
+          node node_modules/electron/install.js
+          python3 tools/make-icons.py
+          packaging/build-deb.sh
+          packaging/build-rpm.sh
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-desktop-linux-packages
+          path: |
+            dist/*.deb
+            dist/*.tar.gz
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x-desktop-windows-x64
+          path: release-assets
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: x-desktop-linux-packages
+          path: release-assets
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          name: "X Desktop v${{ github.ref_name }}"
+          generate_release_notes: true
+          body: |
+            ## X Desktop Client Release 🚀
+            
+            Standalone X/Twitter Desktop Client for **Windows** and **Linux**.
+            
+            ### Features:
+            - Standalone isolated session (no interference with Chrome/Edge/Brave).
+            - Native Wayland & Windows integration.
+            - Ad & Boosted tweet filter.
+            - Instant inline Arabic translation.
+            - Picture-in-Picture floating video window.
+            - MPRIS media player controls (Linux).
+            - Built with Electron.
