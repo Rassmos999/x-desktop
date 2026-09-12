@@ -65,8 +65,10 @@ aside[aria-label*="Subscribe to Premium"] {
 
 /* 5. In-Place Seamless Arabic Translation Block */
 .x-desktop-translation-inline {
-  margin-top: 2px;
-  margin-bottom: 4px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(47, 51, 54);
   direction: rtl;
   text-align: right;
   animation: xFadeIn 0.2s ease forwards;

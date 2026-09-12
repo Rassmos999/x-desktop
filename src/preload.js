@@ -163,13 +163,13 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
   const initialRephraseBtn = isFast ? "ترجمة الذكاء الاصطناعي" : "الترجمة السريعة";
 
   translationBox.innerHTML = `
-    <div class="x-desktop-translation-meta">
-      <span class="x-desktop-badge-text">${initialBadge}</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="x-desktop-show-original-link x-desktop-rephrase-ai">${initialRephraseBtn}</button>
-        <button class="x-desktop-show-original-link x-desktop-hide-translation">عرض الأصل</button>
+      <div class="x-desktop-translation-meta">
+        <span class="x-desktop-badge-text">${initialBadge}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="x-desktop-show-original-link x-desktop-rephrase-ai">${initialRephraseBtn}</button>
+          <button class="x-desktop-show-original-link x-desktop-hide-translation">إخفاء</button>
+        </div>
       </div>
-    </div>
     <div class="x-desktop-translated-text">${formatArabicBiDi(initialText)}</div>
   `;
 
@@ -233,7 +233,6 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
     ev.preventDefault();
     ev.stopPropagation();
     cacheObj.rendered = false;
-    textEl.style.display = "";
     translationBox.remove();
     if (link) {
       link.style.display = "inline-block";
@@ -242,8 +241,8 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
     }
   });
 
-  // Hide original English tweet text so it is replaced cleanly in-place!
-  textEl.style.display = "none";
+  // Keep original English text fully visible above!
+  textEl.style.display = "";
   textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
   return translationBox;
 }
