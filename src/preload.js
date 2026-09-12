@@ -584,6 +584,215 @@ ipcRenderer.on('mpris-action', (e, action, arg) => {
 });
 
 // 10. Keyboard Shortcuts
+
+// 11. Interactive Selection Translation Tooltip (Pop-up)
+let activeTooltip = null;
+let lastSelectedRange = null;
+let lastSelectedText = '';
+
+function removeSelectionTooltip() {
+  if (activeTooltip) {
+    if (activeTooltip.parentNode) {
+      activeTooltip.parentNode.removeChild(activeTooltip);
+    }
+    activeTooltip = null;
+  }
+}
+
+function setupSelectionTranslation() {
+  document.addEventListener('mouseup', (e) => {
+    // Ignore clicks inside the tooltip itself
+    if (activeTooltip && activeTooltip.contains(e.target)) {
+      return;
+    }
+
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        removeSelectionTooltip();
+        return;
+      }
+
+      const text = selection.toString().trim();
+      if (!text || text.length < 2 || text.length > 500) {
+        removeSelectionTooltip();
+        return;
+      }
+
+      // Don't popup inside input/textarea/contenteditable (e.g. tweet composer)
+      const anchorNode = selection.anchorNode;
+      const parentEl = anchorNode ? (anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentElement) : null;
+      if (parentEl && (parentEl.closest('input, textarea, [contenteditable="true"], [data-testid="tweetTextarea_0"]'))) {
+        removeSelectionTooltip();
+        return;
+      }
+
+      // Skip if predominantly Arabic
+      const arabicMatch = text.match(/[\u0600-\u06FF]/g);
+      const arabicCount = arabicMatch ? arabicMatch.length : 0;
+      const totalLetters = (text.match(/[\p{L}]/gu) || []).length;
+      if (totalLetters > 0 && (arabicCount / totalLetters) > 0.4) {
+        removeSelectionTooltip();
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        removeSelectionTooltip();
+        return;
+      }
+
+      lastSelectedRange = range.cloneRange();
+      lastSelectedText = text;
+
+      removeSelectionTooltip();
+      showSelectionTooltip(rect, text);
+    }, 60);
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (activeTooltip && !activeTooltip.contains(e.target)) {
+      removeSelectionTooltip();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      removeSelectionTooltip();
+    }
+  });
+}
+
+function showSelectionTooltip(rect, text) {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'x-selection-tooltip';
+  tooltip.addEventListener('click', (e) => e.stopPropagation());
+  tooltip.addEventListener('mousedown', (e) => e.stopPropagation());
+
+  let currentMode = 'ai';
+  let translatedAi = '';
+  let translatedFast = '';
+  let activeTranslation = '';
+
+  tooltip.innerHTML = `
+    <div class="x-tooltip-header">
+      <span class="x-tooltip-badge">ترجمة الذكاء الاصطناعي</span>
+      <button class="x-tooltip-mode-btn">التبديل للسريعة</button>
+    </div>
+    <div class="x-tooltip-result">جاري الترجمة...</div>
+    <div class="x-tooltip-actions">
+      <button class="x-tooltip-btn x-tooltip-btn-primary x-tooltip-replace-btn" title="استبدال الكلمة مكانها في التغريدة">استبدال مكانها</button>
+      <button class="x-tooltip-btn x-tooltip-copy-btn">نسخ</button>
+      <button class="x-tooltip-btn x-tooltip-close-btn">إغلاق</button>
+    </div>
+  `;
+
+  // Position tooltip relative to page
+  document.body.appendChild(tooltip);
+  activeTooltip = tooltip;
+
+  const tooltipWidth = tooltip.offsetWidth || 220;
+  const tooltipHeight = tooltip.offsetHeight || 100;
+  let left = rect.left + window.scrollX + (rect.width / 2) - (tooltipWidth / 2);
+  let top = rect.top + window.scrollY - tooltipHeight - 10;
+
+  // Keep within window bounds
+  if (left < 10) left = 10;
+  if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10;
+  if (top < window.scrollY + 10) {
+    top = rect.bottom + window.scrollY + 10; // place below if not enough room above
+  }
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+
+  const resultEl = tooltip.querySelector('.x-tooltip-result');
+  const badgeEl = tooltip.querySelector('.x-tooltip-badge');
+  const modeBtn = tooltip.querySelector('.x-tooltip-mode-btn');
+  const replaceBtn = tooltip.querySelector('.x-tooltip-replace-btn');
+  const copyBtn = tooltip.querySelector('.x-tooltip-copy-btn');
+  const closeBtn = tooltip.querySelector('.x-tooltip-close-btn');
+
+  async function fetchAndDisplay(mode) {
+    resultEl.textContent = 'جاري الترجمة...';
+    try {
+      const res = await ipcRenderer.invoke('translate-text', { text, mode });
+      const translated = typeof res === 'object' ? res.text : res;
+      activeTranslation = translated;
+      resultEl.innerHTML = formatArabicBiDi(translated);
+      if (mode === 'ai') {
+        translatedAi = translated;
+        badgeEl.textContent = 'ترجمة الذكاء الاصطناعي';
+        modeBtn.textContent = 'التبديل للسريعة';
+      } else {
+        translatedFast = translated;
+        badgeEl.textContent = 'الترجمة السريعة';
+        modeBtn.textContent = 'التبديل للذكاء الاصطناعي';
+      }
+    } catch (err) {
+      resultEl.textContent = 'تعذرت الترجمة';
+    }
+  }
+
+  modeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    currentMode = (currentMode === 'ai') ? 'auto' : 'ai';
+    if (currentMode === 'auto' && translatedFast) {
+      activeTranslation = translatedFast;
+      resultEl.innerHTML = formatArabicBiDi(translatedFast);
+      badgeEl.textContent = 'الترجمة السريعة';
+      modeBtn.textContent = 'التبديل للذكاء الاصطناعي';
+      return;
+    }
+    if (currentMode === 'ai' && translatedAi) {
+      activeTranslation = translatedAi;
+      resultEl.innerHTML = formatArabicBiDi(translatedAi);
+      badgeEl.textContent = 'ترجمة الذكاء الاصطناعي';
+      modeBtn.textContent = 'التبديل للسريعة';
+      return;
+    }
+    fetchAndDisplay(currentMode);
+  });
+
+  copyBtn.addEventListener('click', () => {
+    if (activeTranslation) {
+      navigator.clipboard.writeText(activeTranslation);
+      copyBtn.textContent = 'تم النسخ ✓';
+      setTimeout(() => { if (copyBtn) copyBtn.textContent = 'نسخ'; }, 1500);
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    removeSelectionTooltip();
+  });
+
+  replaceBtn.addEventListener('click', () => {
+    if (!activeTranslation || !lastSelectedRange) return;
+    try {
+      const span = document.createElement('span');
+      span.className = 'x-desktop-replaced-text';
+      span.textContent = activeTranslation;
+      span.title = 'النص الأصلي: ' + text + ' (انقر للاستعادة)';
+
+      span.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const originalTextNode = document.createTextNode(text);
+        span.parentNode.replaceChild(originalTextNode, span);
+      });
+
+      lastSelectedRange.deleteContents();
+      lastSelectedRange.insertNode(span);
+      removeSelectionTooltip();
+    } catch (err) {
+      console.warn('[X Desktop] Replace in place failed:', err);
+    }
+  });
+
+  fetchAndDisplay('ai');
+}
+
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey) {
     if (e.key === '1') { e.preventDefault(); window.location.href = 'https://x.com/home'; }
@@ -615,6 +824,7 @@ function runLoop() {
 
 document.addEventListener('DOMContentLoaded', () => {
   setupMediaTracking();
+  setupSelectionTranslation();
   runLoop();
 
   const observer = new MutationObserver(() => {
