@@ -178,17 +178,17 @@ aside[aria-label*="Subscribe to Premium"] {
 .x-selection-tooltip {
   position: absolute;
   z-index: 99999;
-  background: rgba(15, 20, 28, 0.96);
+  background: #000000;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  padding: 10px 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
-  color: #f1f5f9;
+  border: 1px solid rgb(47, 51, 54);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: rgb(231, 233, 234);
   font-family: TwitterChirp, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
   font-size: 13px;
-  min-width: 180px;
-  max-width: 340px;
+  min-width: 200px;
+  max-width: 360px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -202,11 +202,10 @@ aside[aria-label*="Subscribe to Premium"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(47, 51, 54);
+  padding-bottom: 5px;
   font-size: 11px;
-  color: #94a3b8;
-  font-family: var(--font-mono, monospace);
+  color: rgb(113, 118, 123);
 }
 
 .x-tooltip-mode-btn {
@@ -234,39 +233,72 @@ aside[aria-label*="Subscribe to Premium"] {
   display: flex;
   align-items: center;
   gap: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 6px;
+  border-top: 1px solid rgb(47, 51, 54);
+  padding-top: 5px;
 }
 
 .x-tooltip-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: #e2e8f0;
+  background: rgba(239, 243, 244, 0.1);
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  color: rgb(231, 233, 234);
   font-size: 11px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 .x-tooltip-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(239, 243, 244, 0.2);
 }
 .x-tooltip-btn-primary {
-  background: rgb(29, 155, 240);
-  border-color: rgb(29, 155, 240);
-  color: #ffffff;
+  background: rgb(239, 243, 244);
+  border-color: transparent;
+  color: #0f1419;
+  font-weight: 600;
 }
 .x-tooltip-btn-primary:hover {
-  background: #1a8cd8;
+  background: rgb(215, 219, 220);
 }
 
+/* In-Place Replaced Word (Matches Native X Typography with BiDi isolation) */
 .x-desktop-replaced-text {
-  background: rgba(29, 155, 240, 0.15);
-  color: #38bdf8;
-  border-bottom: 1px dashed #38bdf8;
-  border-radius: 3px;
-  padding: 0 3px;
+  color: rgb(231, 233, 234) !important;
+  background: rgba(239, 243, 244, 0.08);
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin: 0 2px;
+  direction: rtl !important;
+  unicode-bidi: isolate !important;
+  display: inline;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  border-bottom: 1px solid rgba(239, 243, 244, 0.25);
+  transition: background 0.15s ease;
+}
+.x-desktop-replaced-text:hover {
+  background: rgba(239, 243, 244, 0.16);
+}
+
+/* Side "عودة للمنشور" (Restore Original Post Button) */
+.x-desktop-restore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  color: rgb(113, 118, 123);
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  direction: rtl;
-  display: inline-block;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+.x-desktop-restore-btn:hover {
+  color: rgb(231, 233, 234);
+  text-decoration: underline;
 }

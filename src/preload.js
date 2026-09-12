@@ -771,19 +771,52 @@ function showSelectionTooltip(rect, text) {
   replaceBtn.addEventListener('click', () => {
     if (!activeTranslation || !lastSelectedRange) return;
     try {
-      const span = document.createElement('span');
-      span.className = 'x-desktop-replaced-text';
-      span.textContent = activeTranslation;
-      span.title = 'النص الأصلي: ' + text + ' (انقر للاستعادة)';
+      const anchorNode = lastSelectedRange.startContainer;
+      const textEl = anchorNode ? (anchorNode.nodeType === 1 ? anchorNode.closest('[data-testid="tweetText"]') : anchorNode.parentElement?.closest('[data-testid="tweetText"]')) : null;
+      const tw = textEl ? textEl.closest('article[data-testid="tweet"]') : null;
 
-      span.addEventListener('click', (ev) => {
+      if (textEl && !textEl.dataset.originalHtml) {
+        textEl.dataset.originalHtml = textEl.innerHTML;
+      }
+
+      // Use <bdi> with isolate direction so surrounding English sentences are NOT reversed!
+      const bdi = document.createElement('bdi');
+      bdi.className = 'x-desktop-replaced-text';
+      bdi.dir = 'rtl';
+      bdi.textContent = activeTranslation;
+      bdi.title = 'النص الأصلي: ' + text + ' (انقر للاستعادة)';
+
+      bdi.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const originalTextNode = document.createTextNode(text);
-        span.parentNode.replaceChild(originalTextNode, span);
+        bdi.parentNode.replaceChild(originalTextNode, bdi);
+        if (textEl && !textEl.querySelector('.x-desktop-replaced-text')) {
+          const restoreBtn = tw ? tw.querySelector('.x-desktop-restore-btn') : null;
+          if (restoreBtn) restoreBtn.remove();
+          delete textEl.dataset.originalHtml;
+        }
       });
 
+      // Add/show "عودة للمنشور" button directly on the side of the tweet
+      if (tw && textEl && !tw.querySelector('.x-desktop-restore-btn')) {
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'x-desktop-restore-btn';
+        restoreBtn.innerHTML = '↩ عودة للمنشور';
+        restoreBtn.title = 'استعادة المنشور بالكامل إلى لغته الأصلية';
+        restoreBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (textEl.dataset.originalHtml) {
+            textEl.innerHTML = textEl.dataset.originalHtml;
+            delete textEl.dataset.originalHtml;
+          }
+          restoreBtn.remove();
+        });
+        textEl.parentNode.insertBefore(restoreBtn, textEl.nextSibling);
+      }
+
       lastSelectedRange.deleteContents();
-      lastSelectedRange.insertNode(span);
+      lastSelectedRange.insertNode(bdi);
       removeSelectionTooltip();
     } catch (err) {
       console.warn('[X Desktop] Replace in place failed:', err);
