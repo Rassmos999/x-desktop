@@ -316,8 +316,9 @@ function injectTranslateButtons() {
         }
       }
 
-      await new Promise(r => setTimeout(r, 80));
-      const fullOriginalText = getCleanTweetText(textEl) || originalText;
+      await new Promise(r => setTimeout(r, 160));
+      const latestTextEl = tw.querySelector("[data-testid='tweetText']") || textEl;
+      const fullOriginalText = getCleanTweetText(latestTextEl) || originalText;
 
       link.innerHTML = "جاري الترجمة بالذكاء الاصطناعي...";
       link.disabled = true;

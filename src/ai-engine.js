@@ -39,7 +39,7 @@ class AIEngine {
     this.totalTokens = 120;
     this.requestCount = 2;
     this.tokensPerSec = 28; // Real measured speed on RTX 4060 laptop
-    this.totalContext = 8192;
+    this.totalContext = 12288;
     this.lastContextMap = {
       system: 85,
       input: 95,
@@ -77,8 +77,10 @@ class AIEngine {
       '--model', MODEL_PATH,
       '--port', String(AI_PORT),
       '--host', '127.0.0.1',
-      '-c', '2048',
-      '-t', '8',
+      '-ngl', '99',
+      '-fa', 'on',
+      '-c', '12288',
+      '-t', '6',
       '-np', '1',
       '--reasoning', 'off',
       '--reasoning-budget', '0',
@@ -277,24 +279,32 @@ class AIEngine {
   }
 
   queryGemma(text) {
+    const systemPrompt = "You are an elite bilingual translator for AI engineers, machine learning researchers, and software developers.\n" +
+      "Translate the text from any source language (English, Chinese, Japanese, Korean, French, etc.) into authentic, natural Arabic as used by modern tech developers.\n\n" +
+      "Rules:\n" +
+      "1. Idioms & Tech Slang: Translate contextual developer slang into natural engineering Arabic (e.g. 'cooking' -> 'نجهّز / نعمل على تطوير', 'we are live' -> 'الخدمة متاحة الآن / انطلقنا', 'shipped' -> 'أطلقنا / تم الإصدار', 'weights' -> 'الأوزان', 'inference' -> 'الاستدلال / التشغيل', 'benchmarks' -> 'اختبارات الأداء', 'prompt' -> 'موجه / برومبت').\n" +
+      "2. Technical Acronyms: Keep standard acronyms (LLM, CUDA, VRAM, API, GPU, PyTorch, LoRA, MoE, GGUF, FP8) in English.\n" +
+      "3. Complete & Faithful: Translate every single line and sentence completely without skipping or leaving blanks. Preserve line breaks, emojis, and @usernames.\n" +
+      "4. Output: Output ONLY the translated Arabic text verbatim without quotes or explanations.";
+
     const payload = JSON.stringify({
       messages: [
         {
           role: 'system',
-          content: 'أنت مترجم محترف لمنشورات وسائل التواصل الاجتماعي من الإنجليزية إلى العربية الفصحى المعاصرة. ترجم النص الإنجليزي بدقة وسلاسة وإيجاز وبدون أي تكرار للكلمات. حافظ على الرموز التعبيرية والروابط وأسماء الحسابات. أخرج نص الترجمة العربية فقط بدون مقدمات أو حواشٍ أو اقتباسات.'
+          content: systemPrompt
         },
         {
           role: 'user',
           content: text
         }
       ],
-      temperature: 0.2,
-      frequency_penalty: 0.6,
-      presence_penalty: 0.2,
+      temperature: 0.1,
+      frequency_penalty: 0.0,
+      presence_penalty: 0.0,
       cache_prompt: false,
       id_slot: 0, // Isolated Text Slot
-      stop: ["\n\nملاحظة", "\n\nNote", "\n\n---", "Translation:", "ملاحظات:", "Note:"],
-      max_tokens: Math.min(1024, Math.max(128, Math.round(text.length / 1.5)))
+      stop: ["\n\nملاحظة:", "\n\nNote:", "Translation:"],
+      max_tokens: 1024
     });
 
     return this.postJson('/v1/chat/completions', payload, 45000).then(res => {

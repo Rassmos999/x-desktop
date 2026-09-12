@@ -13,7 +13,7 @@ if [[ ! -x "$SERVER_BIN" ]]; then
   TMP_DIR=$(mktemp -d)
   trap 'rm -rf "$TMP_DIR"' EXIT
 
-  LLAMA_URL="https://github.com/ggml-org/llama.cpp/releases/download/b10828/llama-b10828-bin-ubuntu-x64.tar.gz"
+  LLAMA_URL="https://github.com/ggml-org/llama.cpp/releases/download/b10828/llama-b10828-bin-ubuntu-vulkan-x64.tar.gz"
   curl -f -L -o "$TMP_DIR/llama.tar.gz" "$LLAMA_URL"
   tar -xzf "$TMP_DIR/llama.tar.gz" -C "$TMP_DIR"
 
@@ -38,4 +38,3 @@ if [[ ! -f "$MODEL_FILE" || $(stat -c%s "$MODEL_FILE" 2>/dev/null || echo 0) -lt
 else
   echo "✅ Qwen3-VL-2B model already present at: $MODEL_FILE"
 fi
-
