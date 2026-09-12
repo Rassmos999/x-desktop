@@ -233,6 +233,7 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
     ev.preventDefault();
     ev.stopPropagation();
     cacheObj.rendered = false;
+    textEl.style.display = "";
     translationBox.remove();
     if (link) {
       link.style.display = "inline-block";
@@ -241,6 +242,8 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
     }
   });
 
+  // Hide original English tweet text so it is replaced cleanly in-place!
+  textEl.style.display = "none";
   textEl.parentNode.insertBefore(translationBox, textEl.nextSibling);
   return translationBox;
 }
