@@ -1,7 +1,7 @@
 {
   "name": "x-desktop",
   "productName": "X",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Standalone X/Twitter Desktop Client for Linux with Wayland & Niri integration, Video PiP, Media Downloader, Clean View, and MPRIS controls",
   "license": "MIT",
   "author": "Omar",

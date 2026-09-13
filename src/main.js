@@ -17,7 +17,9 @@ if (process.argv.includes('--version') || process.argv.includes('-v')) {
   process.exit(0);
 }
 
-const CHROME_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+const CHROME_UA = process.platform === 'win32'
+  ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+  : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
 app.userAgentFallback = CHROME_UA;
 
 // Prevent transient D-Bus / socket disconnect notices from interrupting the app
@@ -249,20 +251,9 @@ function createWindow(targetUrl = 'https://x.com') {
   // Handle OAuth popups and window.open requests
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isAuthServiceUrl(url)) {
-      return {
-        action: 'allow',
-        overrideBrowserWindowOptions: {
-          width: 520,
-          height: 680,
-          autoHideMenuBar: true,
-          title: 'Sign In',
-          backgroundColor: '#ffffff',
-          webPreferences: {
-            sandbox: false,
-            contextIsolation: true
-          }
-        }
-      };
+      shell.openExternal(url);
+      openLoginAssistant(url);
+      return { action: 'deny' };
     }
 
     if (isInternalXUrl(url)) {
@@ -305,6 +296,10 @@ function createWindow(targetUrl = 'https://x.com') {
       label: '📊 فتح لوحة تحكم الذكاء الاصطناعي (Web UI)',
       accelerator: 'CmdOrCtrl+Shift+D',
       click: () => shell.openExternal(`http://localhost:${WEB_UI_PORT}`)
+    }));
+    menu.append(new MenuItem({
+      label: '🔑 مساعد تسجيل الدخول (Session Bridge)',
+      click: () => openLoginAssistant()
     }));
     menu.append(new MenuItem({ type: 'separator' }));
 
@@ -484,6 +479,10 @@ function createTray() {
       click: () => shell.openExternal(`http://localhost:${WEB_UI_PORT}`)
     },
     {
+      label: 'Login Assistant (مساعد تسجيل الدخول)',
+      click: () => openLoginAssistant()
+    },
+    {
       label: 'Compose Post...',
       accelerator: 'CmdOrCtrl+N',
       click: () => {
@@ -635,5 +634,221 @@ app.on('will-quit', () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+let loginAssistantWindow = null;
+
+function openLoginAssistant(authUrl = '') {
+  if (loginAssistantWindow && !loginAssistantWindow.isDestroyed()) {
+    loginAssistantWindow.focus();
+    return;
+  }
+
+  loginAssistantWindow = new BrowserWindow({
+    width: 540,
+    height: 640,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    title: 'مساعد تسجيل الدخول (Session Bridge) - X Desktop',
+    icon: getIconPath(),
+    backgroundColor: '#0a0c10',
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  const htmlContent = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>مساعد تسجيل الدخول - X Desktop</title>
+  <style>
+    body {
+      background: #0a0c10;
+      color: #f3f4f6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
+      padding: 24px 28px;
+      margin: 0;
+      box-sizing: border-box;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      font-weight: bold;
+    }
+    h2 { margin: 0; font-size: 17px; font-weight: 600; color: #fff; }
+    p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 10px 0; }
+    .card {
+      background: #12151e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+      box-sizing: border-box;
+      text-decoration: none;
+    }
+    .btn-primary { background: #1d9bf0; color: #fff; margin-top: 8px; }
+    .btn-primary:hover { background: #1a8cd8; }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: #f3f4f6; border: 1px solid rgba(255,255,255,0.12); margin-top: 8px; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.14); }
+    input, textarea {
+      width: 100%;
+      background: #080a0f;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      direction: ltr;
+      text-align: left;
+      margin-top: 6px;
+    }
+    input:focus, textarea:focus { border-color: #1d9bf0; }
+    .step-badge {
+      background: rgba(29, 155, 240, 0.15);
+      color: #38bdf8;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    #statusMsg { font-size: 12px; margin-top: 8px; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="brand">
+    <div class="logo">𝕏</div>
+    <div>
+      <h2>مساعد تسجيل الدخول الذكي</h2>
+      <div style="font-size:12px; color:#64748b;">Session Bridge · المتصفح المعتمد</div>
+    </div>
+  </div>
+
+  <p>نظراً لإجراءات أمان Google المشددة، يتم إتمام المصادقة بأمان داخل متصفحك اليومي (Chrome أو Edge أو Brave).</p>
+
+  <div class="card">
+    <div><span class="step-badge">الخطوة 1</span> <b>تسجيل الدخول في المتصفح</b></div>
+    <p>انقر لفتح حسابك في المتصفح المعتمد وإتمام المصادقة:</p>
+    <button class="btn btn-secondary" id="btnOpenBrowser">🌐 فتح X في المتصفح الافتراضي</button>
+  </div>
+
+  <div class="card">
+    <div><span class="step-badge">الخطوة 2</span> <b>نقل الجلسة (auth_token)</b></div>
+    <p>الصق قيمة كوكيز <code>auth_token</code> أو الكوكيز كاملة ليتم تفعيل الحساب وحفظه فورياً:</p>
+    <input type="text" id="tokenInput" placeholder="الصق auth_token هنا..." />
+    <button class="btn btn-primary" id="btnApplyToken">تطبيق وتسجيل الدخول في X Desktop</button>
+    <div id="statusMsg"></div>
+  </div>
+
+  <script>
+    const { ipcRenderer, shell } = require('electron');
+    const targetAuthUrl = "${authUrl || 'https://x.com/i/flow/login'}";
+
+    document.getElementById('btnOpenBrowser').addEventListener('click', () => {
+      shell.openExternal(targetAuthUrl);
+    });
+
+    document.getElementById('btnApplyToken').addEventListener('click', async () => {
+      const raw = document.getElementById('tokenInput').value.trim();
+      const msg = document.getElementById('statusMsg');
+      if (!raw) {
+        msg.style.color = '#f87171';
+        msg.textContent = 'الرجاء لصق كود الجلسة أو كوكيز auth_token أولاً.';
+        return;
+      }
+      msg.style.color = '#38bdf8';
+      msg.textContent = 'جاري حقن الجلسة وحفظها...';
+
+      const res = await ipcRenderer.invoke('apply-session-token', raw);
+      if (res && res.success) {
+        msg.style.color = '#34d399';
+        msg.textContent = '✅ تم تسجيل الدخول بنجاح! تم تحديث التطبيق.';
+        setTimeout(() => { window.close(); }, 1200);
+      } else {
+        msg.style.color = '#f87171';
+        msg.textContent = 'تعذر تطبيق الجلسة: ' + (res?.error || 'رمز غير صالح');
+      }
+    });
+  </script>
+</body>
+</html>`;
+
+  loginAssistantWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent));
+}
+
+ipcMain.handle('apply-session-token', async (event, rawToken) => {
+  try {
+    let tokenValue = rawToken;
+    if (rawToken.includes('auth_token=')) {
+      const match = rawToken.match(/auth_token=([^;\s]+)/);
+      if (match) tokenValue = match[1];
+    }
+    tokenValue = tokenValue.replace(/^["']|["']$/g, '').trim();
+
+    await session.defaultSession.cookies.set({
+      url: 'https://x.com',
+      name: 'auth_token',
+      value: tokenValue,
+      domain: '.x.com',
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      sameSite: 'no_restriction',
+      expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
+    });
+
+    await session.defaultSession.cookies.set({
+      url: 'https://twitter.com',
+      name: 'auth_token',
+      value: tokenValue,
+      domain: '.twitter.com',
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      sameSite: 'no_restriction',
+      expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
+    });
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL('https://x.com/home');
+      showAndFocusWindow();
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });

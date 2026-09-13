@@ -12,7 +12,7 @@ const GEMMA_PATH = path.join(MODELS_DIR, 'gemma-4-E2B-it-Q4_K_M.gguf');
 const QWEN_PATH = path.join(MODELS_DIR, 'Qwen3VL-2B-Instruct-Q4_K_M.gguf');
 const MODEL_PATH = GEMMA_PATH;
 const MMPROJ_PATH = path.join(MODELS_DIR, 'mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf');
-const SERVER_BIN = path.join(BIN_DIR, 'llama-server');
+const SERVER_BIN = path.join(BIN_DIR, process.platform === 'win32' ? 'llama-server.exe' : 'llama-server');
 const AI_PORT = 28491;
 
 function preprocessSlang(text) {
@@ -92,9 +92,16 @@ class AIEngine {
       console.log('🖼️ [X Desktop AI] Vision projector attached:', MMPROJ_PATH);
     }
 
+    const spawnEnv = { ...process.env };
+    if (process.platform === 'win32') {
+      spawnEnv.PATH = BIN_DIR + (process.env.PATH ? ';' + process.env.PATH : '');
+    } else {
+      spawnEnv.LD_LIBRARY_PATH = BIN_DIR + (process.env.LD_LIBRARY_PATH ? ':' + process.env.LD_LIBRARY_PATH : '');
+    }
+
     try {
       this.process = spawn(SERVER_BIN, args, {
-        env: { ...process.env, LD_LIBRARY_PATH: BIN_DIR + (process.env.LD_LIBRARY_PATH ? ':' + process.env.LD_LIBRARY_PATH : '') },
+        env: spawnEnv,
         detached: true,
         stdio: 'ignore'
       });

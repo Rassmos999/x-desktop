@@ -78,10 +78,16 @@ How to run:
 
 Features:
 - Standalone isolated session (no interference with Chrome/Edge/Brave)
+- Google Login Bridge: Seamlessly authenticate in your default browser and sync session
 - Ad & Boosted tweet filter
 - Instant inline Arabic translation
 - PiP floating video window
 - Media download to ~/Downloads
+
+How to Sign In with Google:
+1. Click "Sign in with Google" or right-click anywhere and select "Login Assistant".
+2. Your default browser will open to authenticate securely with Google.
+3. Paste the auth_token or click Apply to instantly connect your account permanently.
 
 Built with Electron.
 EOF

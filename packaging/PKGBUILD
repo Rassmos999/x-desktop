@@ -1,6 +1,6 @@
 # Maintainer: Omar
 pkgname=x-desktop
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc='Standalone X/Twitter Desktop Client with Wayland & Niri integration, Video PiP, and MPRIS controls'
 arch=('x86_64')
