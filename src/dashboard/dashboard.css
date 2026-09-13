@@ -170,6 +170,42 @@ textarea:focus { border-color: var(--action); }
 }
 .routes li:last-child { border-bottom: none; }
 .routes code { font-family: var(--mono); font-size: 12px; color: var(--text); }
+
+/* Model panel: state line, real label above control, mono path readout. */
+.mstate {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; padding: 9px 12px; margin-bottom: 16px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl);
+  background: var(--well); color: var(--muted);
+}
+.mstate-glyph { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--faint); }
+.mstate[data-tone="ok"] { color: var(--ok-ink); }
+.mstate[data-tone="ok"] .mstate-glyph { background: var(--ok); }
+.mstate[data-tone="warn"] { color: var(--warn-ink); }
+.mstate[data-tone="warn"] .mstate-glyph { background: var(--warn); border-radius: 2px; }
+.mstate[data-tone="bad"] { color: var(--bad-ink); }
+.mstate[data-tone="bad"] .mstate-glyph { background: var(--bad); border-radius: 0; transform: rotate(45deg) scale(0.9); }
+.mstate .spin { border-color: rgba(251, 191, 36, 0.35); border-top-color: var(--warn-ink); }
+
+.mrow { display: flex; flex-direction: column; gap: 7px; }
+.mlabel { font-size: 12px; color: var(--muted); }
+.mval {
+  font-size: 12px; color: var(--text);
+  background: var(--well); border: 1px solid var(--line);
+  border-radius: var(--r-ctl); padding: 8px 11px;
+  overflow-wrap: anywhere;
+}
+.mhint { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.mrw { margin-top: 16px; display: flex; flex-direction: column; gap: 7px; }
+
+.select {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--well); color: var(--text);
+  border: 1px solid var(--line-strong); border-radius: var(--r-ctl);
+  padding: 10px 12px; min-height: 42px; width: 100%;
+}
+.select:disabled { opacity: 0.5; cursor: not-allowed; }
+.select option { background: var(--well); color: var(--text); }
 .st { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
 .st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .st-ok { color: var(--ok-ink); }

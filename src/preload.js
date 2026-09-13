@@ -354,7 +354,26 @@ function injectTranslateButtons() {
 
 
 // 7. Vision Image Translation Action in Tweets
+//
+// Image translation only works when a vision-capable model AND its projector
+// are both present; the engine reports that through get-ai-status. The button
+// is therefore injected only when the engine can actually answer, and the
+// label names the model that is really loaded instead of a fixed string.
+let visionAvailable = false;
+let activeModelName = '';
+
+async function refreshAiStatus() {
+  try {
+    const status = await ipcRenderer.invoke('get-ai-status');
+    visionAvailable = Boolean(status && status.hasVision);
+    activeModelName = (status && status.activeModel) || '';
+  } catch (e) {
+    visionAvailable = false;
+  }
+}
+
 function injectImageTranslateButtons() {
+  if (!visionAvailable) return;
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tw => {
     const photoContainer = tw.querySelector('div[data-testid="tweetPhoto"]');
@@ -416,11 +435,20 @@ function injectImageTranslateButtons() {
 
             resultBox.innerHTML = `
               <div class="x-desktop-translation-meta">
-                <span>ترجمة النصوص المستخرجة من الصورة (Qwen3-VL · RTX 4060)</span>
+                <span class="x-desktop-vision-model">ترجمة النصوص المستخرجة من الصورة</span>
                 <button class="x-desktop-show-original-link">Hide</button>
               </div>
-              <div class="x-desktop-translated-text">${formatArabicBiDi(translation)}</div>
+              <div class="x-desktop-translated-text"></div>
             `;
+
+            // formatArabicBiDi escapes &, < and > before adding its own <bdi>
+            // wrappers, so this markup is model-proof by construction.
+            resultBox.querySelector('.x-desktop-translated-text')
+              .innerHTML = formatArabicBiDi(translation);
+            if (activeModelName) {
+              resultBox.querySelector('.x-desktop-vision-model')
+                .textContent = 'ترجمة النصوص المستخرجة من الصورة (' + activeModelName + ')';
+            }
 
             const hideBtn = resultBox.querySelector('.x-desktop-show-original-link');
             hideBtn.addEventListener('click', (ev) => {
@@ -860,7 +888,13 @@ function runLoop() {
 document.addEventListener('DOMContentLoaded', () => {
   setupMediaTracking();
   setupSelectionTranslation();
+  // Vision support is decided by the engine, not by the presence of a button.
+  refreshAiStatus().then(runLoop);
   runLoop();
+
+  // The model can change at runtime from the dashboard, so re-check the
+  // engine's vision capability periodically rather than only at startup.
+  setInterval(refreshAiStatus, 15000);
 
   const observer = new MutationObserver(() => {
     runLoop();

@@ -1,351 +1,271 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080a0f">
-  <title>X Desktop - Engineering Architecture & Model Deployment Catalog</title>
-  <style>
-    :root {
-      --bg-base: #080a0f;
-      --bg-surface: #10131b;
-      --bg-surface-elevated: #161b26;
-      --bg-code: #0b0e14;
-      
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-active: rgba(255, 255, 255, 0.18);
-      
-      --accent-brand: #1d9bf0;
-      --accent-accent: #38bdf8;
-      
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      
-      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: "JetBrains Mono", "Fira Code", monospace;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background-color: var(--bg-base);
-      color: var(--text-main);
-      font-family: var(--font-sans);
-      line-height: 1.6;
-      padding-bottom: 60px;
-    }
-
-    header {
-      border-bottom: 1px solid var(--border-subtle);
-      background: rgba(16, 19, 27, 0.85);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      padding: 16px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .brand-logo {
-      width: 30px;
-      height: 30px;
-      background: #000;
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 16px;
-      color: #fff;
-    }
-
-    .brand-name {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .version-tag {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-muted);
-    }
-
-    .container {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 36px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 36px;
-    }
-
-    h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-
-    h2 {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: #fff;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    p {
-      color: var(--text-muted);
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-
-    .card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 24px;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 720px) {
-      .grid-2 { grid-template-columns: 1fr; }
-    }
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      text-align: left;
-    }
-
-    th, td {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    th {
-      color: var(--text-muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-weight: 600;
-    }
-
-    code {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      background: var(--bg-code);
-      padding: 2px 6px;
-      border-radius: 4px;
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-    }
-
-    pre {
-      background: var(--bg-code);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 14px;
-      overflow-x: auto;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: #e2e8f0;
-      margin: 10px 0;
-      line-height: 1.5;
-    }
-
-    .key-badge {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #fff;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14110f">
+<title>X Desktop — a standalone X client translated on your own GPU</title>
+<meta name="description" content="A standalone X (Twitter) desktop client for Linux and Windows: an isolated profile, network-level feed filtering, and Arabic translation running on your own graphics card.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Amiri:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/landing.css">
+<link rel="alternate" hreflang="ar" href="ar/">
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <div class="brand-logo">X</div>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="top-in">
+    <a class="mark" href="./">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <b>X Desktop</b>
+    </a>
+    <span class="spacer"></span>
+    <nav aria-label="Primary">
+      <a href="#download">Download</a>
+      <a href="#engines">Translation</a>
+      <a href="manual/">Manual</a>
+      <a class="lang" href="ar/" hreflang="ar" lang="ar">العربية</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Opening statement: the claim at display scale over a warm field, with the
+       product's real specifications along the bottom edge. -->
+  <section class="hero">
+    <div class="hero-ground" aria-hidden="true"></div>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="hero-grid-lines" aria-hidden="true"></div>
+
+    <div class="hero-top">
+      <span class="label">Standalone desktop client · Linux &amp; Windows</span>
+      <span class="label ltr">v1.0.1</span>
+    </div>
+
+    <div class="hero-body">
+      <h1>Translation that never leaves <em>your GPU.</em></h1>
+    </div>
+
+    <span class="hero-side" aria-hidden="true">Established on the principle that your reading is your own</span>
+
+    <dl class="hero-specs">
+      <div class="spec">
+        <dt>Engine</dt>
+        <dd>Gemma-4-E2B<small>Q4_K_M, Vulkan-accelerated, served from loopback</small></dd>
+      </div>
+      <div class="spec">
+        <dt>Context</dt>
+        <dd>12,288<small>tokens, one model file loaded at a time</small></dd>
+      </div>
+      <div class="spec">
+        <dt>Profile</dt>
+        <dd>Isolated<small>own cookies, storage and cache — separate from your browser</small></dd>
+      </div>
+      <div class="spec">
+        <dt>Platforms</dt>
+        <dd>4<small>Debian, Fedora, Arch, Windows x64</small></dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- Download -->
+  <section class="get" id="download">
+    <div class="get-lead">
+      <div class="marker" style="margin-bottom:22px;"><span class="num">01</span><span class="rule"></span><span class="label">Download</span></div>
+      <h2>Install the client. Then give it a model.</h2>
+      <p>The client browses without any model at all. Translation needs one file, downloaded once.</p>
+      <div class="get-actions">
+        <a class="btn btn-primary" href="manual/#install">Installation steps</a>
+        <a class="btn" href="https://github.com/Rassmos999/x-desktop">Source code</a>
+      </div>
+    </div>
+    <div class="get-list">
+      <p class="label" id="dlNote" style="padding-bottom:8px;" data-detected="Detected this platform · any build below works">Latest release · every build attached</p>
+      <a class="dl" data-platform="windows" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop-windows-x64.zip">
+        <span class="n">01</span>
+        <span class="nm">Windows x64<small class="ltr">portable zip · x-desktop.exe</small></span>
+        <span class="sz ltr" data-prefix="recommended · ">138 MB</span>
+      </a>
+      <a class="dl" data-platform="debian" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop_1.0.1_amd64.deb">
+        <span class="n">02</span>
+        <span class="nm">Debian · Ubuntu<small class="ltr">x-desktop_1.0.1_amd64.deb</small></span>
+        <span class="sz ltr">81 MB</span>
+      </a>
+      <a class="dl" data-platform="fedora" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop-1.0.1-1.x86_64.rpm">
+        <span class="n">03</span>
+        <span class="nm">Fedora · RHEL<small class="ltr">x-desktop-1.0.1-1.x86_64.rpm</small></span>
+        <span class="sz ltr">106 MB</span>
+      </a>
+      <a class="dl" data-platform="arch" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop-1.0.1-1-x86_64.pkg.tar.zst">
+        <span class="n">04</span>
+        <span class="nm">Arch Linux<small class="ltr">x-desktop-1.0.1-1-x86_64.pkg.tar.zst</small></span>
+        <span class="sz ltr">100 MB</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="wrap">
+
+    <!-- Two engines -->
+    <section class="band" id="engines">
+      <div class="band-in">
+        <div class="band-head">
+          <div class="marker" style="margin-bottom:22px;"><span class="num">02</span><span class="rule"></span><span class="label">Translation</span></div>
+          <h2>Two engines. The difference is <em>where your text goes.</em></h2>
+        </div>
+        <div class="band-body">
+          <p>
+            One path runs entirely on your hardware. The other is a cloud request. Both are useful,
+            and the client names which one answered rather than leaving you to guess.
+          </p>
+
+          <div class="compare">
+            <div class="compare-row compare-head">
+              <div></div><div>AI engine</div><div>Fast engine</div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">Runs on</div>
+              <div><span class="chip" data-engine="ai">Your GPU</span></div>
+              <div><span class="chip" data-engine="cloud">A cloud request</span></div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">Leaves your machine</div>
+              <div>Nothing. Inference is served from <span class="ltr mono">127.0.0.1</span>.</div>
+              <div>The text you translate is sent to <span class="ltr mono">translate.googleapis.com</span>.</div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">Needs a model</div>
+              <div>Yes — one GGUF file, loaded onto the GPU.</div>
+              <div>No. It works before you download anything.</div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">When the local model returns nothing</div>
+              <div class="wide">The client currently completes the request through the cloud path rather than failing. The dashboard tags every result with the engine that produced it, and the manual explains how to read that tag — treat the tag as the proof, not the button you pressed.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Capability index -->
+    <section class="band" id="capabilities">
+      <div class="band-in">
+        <div class="band-head">
+          <div class="marker" style="margin-bottom:22px;"><span class="num">03</span><span class="rule"></span><span class="label">Capabilities</span></div>
+          <h2>What is actually <em>implemented.</em></h2>
+        </div>
+        <div class="band-body">
+          <p>Each item below is present in the published source and described in the manual. Nothing here is planned, and nothing unshipped is advertised.</p>
+
+          <div class="index-cap">
+            <div class="cap">
+              <span class="n">01</span>
+              <div>
+                <h3>Isolated browsing profile</h3>
+                <p>Cookies, storage and cache live under <span class="ltr mono">~/.config/x-desktop</span> on Linux and <span class="ltr mono">%APPDATA%\x-desktop</span> on Windows — separate from every other browser on the machine.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n">02</span>
+              <div>
+                <h3>Timeline filtering</h3>
+                <p>Promoted posts, boosted entries and known advertising and analytics endpoints are blocked at the network layer before they render, so media in the same timeline is unaffected.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n">03</span>
+              <div>
+                <h3>Selection and inline translation</h3>
+                <p>Highlight text in a post to translate it in a floating tooltip, copy the result, or swap it inline and restore the original. Latin runs inside Arabic are bidi-isolated so mixed content stays readable.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n">04</span>
+              <div>
+                <h3>Local engine dashboard with model switching</h3>
+                <p>A telemetry wall on <span class="ltr mono">127.0.0.1:28492</span> reports engine state, the loaded model, VRAM, temperature and measured throughput, runs a test translation, and switches between the models in your folder.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n">05</span>
+              <div>
+                <h3>Google sign-in bridge</h3>
+                <p>Google refuses to authenticate inside embedded views. The client routes that step to your system browser and imports the resulting session token through the Session Assistant.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n">06</span>
+              <div>
+                <h3>Desktop integration</h3>
+                <p>Tray with quick actions, MPRIS media controls on Linux, example tiling rules for Niri and Hyprland, and media download to your Downloads folder.</p>
+              </div>
+            </div>
+          </div>
+
+          <figure class="shot">
+            <img src="assets/shots/dashboard.png" width="1440" height="1350" alt="The X Desktop engine dashboard: a status rail showing engine state, VRAM, temperature and throughput; a numbered test console; a context-window allocation bar; route states; an operations log; and a model panel listing installed models with a switch control." loading="lazy" decoding="async">
+            <figcaption>Engine dashboard · live values read from the local engine on port 28491</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Requirements -->
+    <section class="band" id="requirements">
+      <div class="band-in">
+        <div class="band-head">
+          <div class="marker" style="margin-bottom:22px;"><span class="num">04</span><span class="rule"></span><span class="label">Requirements</span></div>
+          <h2>What it asks of <em>your machine.</em></h2>
+        </div>
+        <div class="band-body">
+          <p>
+            Linux x64 or Windows x64. Local translation expects a discrete GPU reachable through Vulkan;
+            an NVIDIA RTX 4060 is the configuration the models were measured on. The model is a 2.89 GB
+            download and holds roughly that much VRAM once loaded.
+          </p>
+          <p>
+            Without a compatible GPU the client still browses and the Fast engine still translates — the AI
+            engine simply has nothing to load onto, and it reports that rather than failing silently.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="close">
       <div>
-        <span class="brand-name">X Desktop Documentation</span>
+        <div class="marker" style="margin-bottom:22px;"><span class="num">05</span><span class="rule"></span><span class="label">Manual</span></div>
+        <h2>The manual covers the rest.</h2>
+        <p>
+          Installation on each platform, the exact model files and where they belong, how to add and switch
+          a model, every keyboard shortcut, where your data lives, and what to check when the engine is not ready.
+        </p>
       </div>
-      <span class="version-tag">v1.0.1</span>
-    </div>
-    <div>
-      <a href="https://github.com/Rassmos999/x-desktop" target="_blank" style="color:var(--text-muted); text-decoration:none; font-size:13px;">GitHub Repository</a>
-    </div>
-  </header>
-
-  <main class="container">
-
-    <section>
-      <h1>Engineering Architecture & Deployment Catalog</h1>
-      <p>Technical reference for running X Desktop, deploying local neural translation models on GPU, and managing dual-engine translations on Linux and Windows.</p>
-    </section>
-
-    <!-- Architecture Section -->
-    <section class="card">
-      <h2>01. System Architecture</h2>
-      <p>X Desktop is a standalone client engineered to decouple X browsing from your daily browser instance, enforcing complete profile isolation while integrating native OS capabilities:</p>
-      
-      <div class="grid-2" style="margin-top:14px;">
-        <div style="background:var(--bg-surface-elevated); padding:16px; border-radius:8px; border:1px solid var(--border-subtle);">
-          <strong style="font-size:13px; color:#fff; display:block; margin-bottom:6px;">Isolated Profile Storage</strong>
-          <p style="margin:0; font-size:13px;">Cookies, LocalStorage, and Cache are strictly contained in <code>~/.config/x-desktop</code> on Linux and <code>%APPDATA%\x-desktop</code> on Windows. Zero credential leakage with Chrome, Brave, or Edge.</p>
-        </div>
-        <div style="background:var(--bg-surface-elevated); padding:16px; border-radius:8px; border:1px solid var(--border-subtle);">
-          <strong style="font-size:13px; color:#fff; display:block; margin-bottom:6px;">Dual-Engine Neural Pipeline</strong>
-          <p style="margin:0; font-size:13px;">Default local fallback delivers sub-80ms human-grade translations. GPU acceleration offloads deep technical/CS reasoning to local GGUF models on NVIDIA RTX hardware.</p>
-        </div>
+      <div class="close-actions">
+        <a class="btn btn-primary" href="manual/">Read the manual</a>
+        <a class="btn" href="https://github.com/Rassmos999/x-desktop/releases/latest">All releases</a>
       </div>
     </section>
 
-    <!-- Model Catalog Section -->
-    <section class="card">
-      <h2>02. Local Model Catalog & GGUF Deployment</h2>
-      <p>The desktop engine interfaces with standalone GGUF quantized models executed through an isolated local runtime process on port <code>28491</code>.</p>
-      
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Model</th>
-              <th>Format / Quant</th>
-              <th>Size</th>
-              <th>Context</th>
-              <th>Primary Use Case</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Gemma 4 (E2B-it)</strong></td>
-              <td><code>Q4_K_M.gguf</code></td>
-              <td>2.9 GB</td>
-              <td>12,288</td>
-              <td>Deep technical CS, AI jargon, idioms, multi-line formatting</td>
-            </tr>
-            <tr>
-              <td><strong>Qwen3-VL (2B-Instruct)</strong></td>
-              <td><code>Q4_K_M.gguf</code></td>
-              <td>1.03 GB</td>
-              <td>8,192</td>
-              <td>Multimodal Vision OCR and compact resource environments</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  </div>
+</main>
 
-      <div style="margin-top:18px;">
-        <strong style="font-size:13px; color:#fff;">Deployment File Paths:</strong>
-        <p style="margin-top:6px;">Place the GGUF weights in the following operating system directory:</p>
-        <pre>Linux:   ~/.local/share/x-desktop/models/gemma-4-E2B-it-Q4_K_M.gguf
-Windows: %USERPROFILE%\.local\share\x-desktop\models\gemma-4-E2B-it-Q4_K_M.gguf</pre>
-      </div>
-    </section>
+<footer class="foot">
+  <div class="foot-in">
+    <span class="label">X Desktop</span>
+    <span class="label ltr">MIT License</span>
+    <span class="spacer" style="margin-inline-start:auto;"></span>
+    <a href="manual/">Manual</a>
+    <a href="https://github.com/Rassmos999/x-desktop">GitHub</a>
+    <a href="ar/" hreflang="ar" lang="ar">العربية</a>
+  </div>
+</footer>
 
-    <!-- Hardware Acceleration Guide -->
-    <section class="card">
-      <h2>03. GPU Acceleration (Vulkan & CUDA)</h2>
-      <p>X Desktop executes models directly against your discrete GPU (NVIDIA RTX 4060 or compatible) to sustain 85+ tokens per second:</p>
-      
-      <pre># Automated Runtime Launch Parameters:
-llama-server   --model ~/.local/share/x-desktop/models/gemma-4-E2B-it-Q4_K_M.gguf   --port 28491   --host 127.0.0.1   -ngl 99   -fa on   -c 12288   -t 6   -np 1   --reasoning off   --reasoning-budget 0   --log-disable</pre>
-      
-      <p style="margin-top:10px;">The runtime automatically binds to <code>libggml-vulkan.so</code> on Linux and <code>vulkan-1.dll</code> on Windows, ensuring complete layer offloading with ~2.7 GB VRAM footprint.</p>
-    </section>
-
-    <!-- Keyboard Shortcuts & Controls -->
-    <section class="card">
-      <h2>04. Command & Shortcut Reference</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Shortcut</th>
-              <th>Action</th>
-              <th>Subsystem Scope</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="key-badge">Ctrl + Q</span></td>
-              <td>Immediate App Termination & Full VRAM Purge</td>
-              <td>Terminates client and SIGKILLs llama-server process</td>
-            </tr>
-            <tr>
-              <td><span class="key-badge">Ctrl + Shift + D</span></td>
-              <td>Open AI Telemetry Dashboard</td>
-              <td>Launches live GPU & Context Monitor on port 28492</td>
-            </tr>
-            <tr>
-              <td><span class="key-badge">Text Selection</span></td>
-              <td>Interactive Translation Tooltip</td>
-              <td>Instant popup for single words or sentences with in-place replace</td>
-            </tr>
-            <tr>
-              <td><span class="key-badge">Ctrl + Wheel</span></td>
-              <td>Smooth Dynamic Interface Zoom</td>
-              <td>Renderer scale factor adjustment</td>
-            </tr>
-            <tr>
-              <td><span class="key-badge">Ctrl + N</span></td>
-              <td>Compose New Post</td>
-              <td>Direct shortcut to post composition</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Session Bridge & Google Sign-in -->
-    <section class="card">
-      <h2>05. Google Authentication & Session Bridge</h2>
-      <p>Google blocks embedded Electron webviews with security error <code>Couldn't sign you in - This browser or app may not be secure</code>. X Desktop resolves this via the native Session Bridge:</p>
-      
-      <ol style="margin-left:20px; color:var(--text-muted); font-size:13px; line-height:1.8;">
-        <li>Click <strong>Sign in with Google</strong> or open <strong>Session Assistant</strong> from the context menu.</li>
-        <li>Authentication opens securely in your default desktop browser (Chrome, Brave, or Edge).</li>
-        <li>Copy your <code>auth_token</code> cookie value and paste it into the Session Assistant.</li>
-        <li>The client injects the token via <code>session.defaultSession.cookies.set()</code> with Secure and HttpOnly flags, establishing a permanent isolated session.</li>
-      </ol>
-    </section>
-
-  </main>
-
+<script src="assets/landing.js" defer></script>
 </body>
 </html>

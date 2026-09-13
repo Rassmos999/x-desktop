@@ -40,6 +40,9 @@ mkdir -p "$APP_DEST"
 cp "$ROOT/package.json" "$APP_DEST/"
 cp -r "$ROOT/src" "$APP_DEST/"
 cp -r "$ROOT/data" "$APP_DEST/"
+# The manual is served from the app at /docs, and CI copies it too; without this
+# the local build ships a client whose docs route returns 404.
+cp -r "$ROOT/docs" "$APP_DEST/"
 
 # Copy production node_modules excluding electron
 if [[ -d "$ROOT/node_modules" ]]; then

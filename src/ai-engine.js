@@ -8,12 +8,42 @@ const fs = require('fs');
 
 const MODELS_DIR = path.join(os.homedir(), '.local', 'share', 'x-desktop', 'models');
 const BIN_DIR = path.join(os.homedir(), '.local', 'share', 'x-desktop', 'bin');
+const CONFIG_PATH = path.join(os.homedir(), '.local', 'share', 'x-desktop', 'config.json');
 const GEMMA_PATH = path.join(MODELS_DIR, 'gemma-4-E2B-it-Q4_K_M.gguf');
 const QWEN_PATH = path.join(MODELS_DIR, 'Qwen3VL-2B-Instruct-Q4_K_M.gguf');
-const MODEL_PATH = GEMMA_PATH;
+const DEFAULT_MODEL_FILE = path.basename(GEMMA_PATH);
 const MMPROJ_PATH = path.join(MODELS_DIR, 'mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf');
 const SERVER_BIN = path.join(BIN_DIR, process.platform === 'win32' ? 'llama-server.exe' : 'llama-server');
 const AI_PORT = 28491;
+
+// A multimodal projector is paired with a vision model, never loaded as one.
+function isProjectorFile(name) {
+  return /^mmproj/i.test(name);
+}
+
+// Heuristic over the model file name: only these can meaningfully consume -mmproj.
+function isVisionCapableName(name) {
+  return /qwen[0-9.]*-?vl|llava|vision|minicpm-?v|moondream|gemma-3.*vision/i.test(name);
+}
+
+function readConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeConfig(patch) {
+  try {
+    fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
+    const next = Object.assign(readConfig(), patch);
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2) + '\n', 'utf8');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 function preprocessSlang(text) {
   if (!text) return '';
@@ -48,6 +78,8 @@ class AIEngine {
     this.process = null;
     this.isReady = false;
     this.isStarting = false;
+    this.isSwitching = false;
+    this.lastError = null;
     this.translationCache = new Map();
     this.maxCache = 500;
     this.cacheHits = 0;
@@ -56,22 +88,128 @@ class AIEngine {
     // Real Hardware Measured Telemetry
     this.totalTokens = 120;
     this.requestCount = 2;
-    this.tokensPerSec = 28; // Real measured speed on RTX 4060 laptop
+    // Null until inference actually reports a rate; the UI shows "--" rather
+    // than a number nobody measured.
+    this.tokensPerSec = null;
     this.totalContext = 12288;
-    this.lastContextMap = {
-      system: 85,
-      input: 95,
-      vision: 0,
-      output: 45
-    };
+    this.lastContextMap = null;
+  }
+
+  // --- Active model resolution -------------------------------------------
+
+  // Files on disk that are loadable models (projectors excluded).
+  listModelFiles() {
+    try {
+      return fs.readdirSync(MODELS_DIR)
+        .filter(f => f.toLowerCase().endsWith('.gguf') && !isProjectorFile(f))
+        .sort((a, b) => a.localeCompare(b));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  sizeOf(file) {
+    try {
+      return fs.statSync(path.join(MODELS_DIR, file)).size;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  // The configured model when it still exists, otherwise the preferred Gemma
+  // file, otherwise whatever model is present. Never returns a projector.
+  getActiveModel() {
+    const files = this.listModelFiles();
+    const configured = readConfig().activeModel;
+    if (configured && files.includes(configured)) return configured;
+    if (files.includes(DEFAULT_MODEL_FILE)) return DEFAULT_MODEL_FILE;
+    return files[0] || null;
+  }
+
+  getModelPath() {
+    const active = this.getActiveModel();
+    return active ? path.join(MODELS_DIR, active) : GEMMA_PATH;
+  }
+
+  listModels() {
+    const active = this.getActiveModel();
+    return this.listModelFiles().map(f => ({
+      file: f,
+      size: this.sizeOf(f),
+      active: f === active,
+      vision: isVisionCapableName(f)
+    }));
+  }
+
+  hasProjector() {
+    return fs.existsSync(MMPROJ_PATH);
+  }
+
+  // Persist a new active model and restart the engine, resolving only once the
+  // new model has actually loaded (or the wait times out). startServer()
+  // returns as soon as the child spawns, so callers must not treat that as
+  // readiness.
+  async setActiveModel(file, timeoutMs = 45000) {
+    if (!file || typeof file !== 'string') {
+      return { ok: false, state: 'error', error: 'A model file name is required.' };
+    }
+    if (path.basename(file) !== file || !file.toLowerCase().endsWith('.gguf')) {
+      return { ok: false, state: 'error', error: 'Invalid model file name.' };
+    }
+    if (isProjectorFile(file)) {
+      return { ok: false, state: 'error', error: 'That file is a vision projector, not a model.' };
+    }
+    if (!this.listModelFiles().includes(file)) {
+      return { ok: false, state: 'error', error: 'That model is not in the models folder.' };
+    }
+
+    this.isSwitching = true;
+    this.lastError = null;
+    try {
+      writeConfig({ activeModel: file });
+      this.destroy();
+      this.isReady = false;
+      this.isStarting = false;
+      this.startServer();
+
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (await this.ping()) {
+          this.isReady = true;
+          this.isStarting = false;
+          this.isSwitching = false;
+          return { ok: true, state: 'ready', activeModel: file };
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      this.isSwitching = false;
+      this.lastError = 'The engine did not become ready in time.';
+      return { ok: false, state: this.getEngineState(), error: this.lastError, activeModel: file };
+    } catch (e) {
+      this.isSwitching = false;
+      this.lastError = e.message;
+      return { ok: false, state: this.getEngineState(), error: e.message };
+    }
+  }
+
+  // Honest engine state for the UI to render instead of inferring one.
+  getEngineState() {
+    if (this.isSwitching) return 'switching';
+    if (this.isStarting) return 'starting';
+    if (this.isReady) return 'ready';
+    return 'offline';
   }
 
   hasModel() {
-    return fs.existsSync(MODEL_PATH) && fs.existsSync(SERVER_BIN);
+    return fs.existsSync(this.getModelPath()) && fs.existsSync(SERVER_BIN);
   }
 
+  // Real check: a projector must exist AND the active model must be able to
+  // consume it. Previously hardcoded false, which silently disabled vision.
   hasVision() {
-    return false;
+    const active = this.getActiveModel();
+    return Boolean(active) && isVisionCapableName(active) && this.hasProjector();
   }
 
   async startServer() {
@@ -80,7 +218,7 @@ class AIEngine {
     const alreadyRunning = await this.ping();
     if (alreadyRunning) {
       this.isReady = true;
-      console.log('✅ [X Desktop AI] Connected to running Gemma-4 AI server on RTX 4060 GPU.');
+      console.log('✅ [X Desktop AI] Connected to already-running local model server on port ' + AI_PORT + '.');
       return;
     }
 
@@ -89,10 +227,11 @@ class AIEngine {
     }
 
     this.isStarting = true;
-    console.log('[X Desktop AI] Launching local Gemma-4-E2B AI server on RTX 4060 GPU...');
+    const activeFile = this.getActiveModel();
+    console.log('[X Desktop AI] Launching local model ' + (activeFile || 'unknown') + ' on the GPU...');
 
     const args = [
-      '--model', MODEL_PATH,
+      '--model', this.getModelPath(),
       '--port', String(AI_PORT),
       '--host', '127.0.0.1',
       '-ngl', '99',
@@ -131,7 +270,7 @@ class AIEngine {
           clearInterval(checkInterval);
           this.isReady = true;
           this.isStarting = false;
-          console.log('✅ [X Desktop AI] Gemma-4-E2B loaded onto GPU.');
+          console.log('✅ [X Desktop AI] ' + (this.getActiveModel() || 'Model') + ' loaded onto GPU.');
         }
       }, 400);
 
@@ -160,6 +299,8 @@ class AIEngine {
       totalContext: this.totalContext,
       lastContextMap: this.lastContextMap,
       isReady: this.isReady,
+      engineState: this.getEngineState(),
+      activeModel: this.getActiveModel(),
       cacheSize: this.translationCache.size,
       cacheHits: this.cacheHits,
       history: this.history.slice(-15).reverse()
@@ -222,7 +363,7 @@ class AIEngine {
         timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         source: trimmed.slice(0, 100),
         translated: result.slice(0, 100),
-        engine: usedEngine === 'gemma4' ? 'AI (Gemma-4)' : 'Fast (Google)',
+        engine: usedEngine === 'gemma4' ? 'AI (local)' : 'Fast (Google)',
         tokens: Math.round(trimmed.length / 3.5) + Math.round(result.length / 3.2)
       });
       if (this.history.length > 30) {

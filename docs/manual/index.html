@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-label-copy="Copy" data-label-copy-aria="Copy this command" data-label-copied="Copied" data-label-copy-manual="Press Ctrl+C">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14110f">
+<title>X Desktop Manual — install, models, shortcuts, troubleshooting</title>
+<meta name="description" content="Complete user manual for X Desktop: installation on Linux and Windows, model setup and switching, translation modes, keyboard shortcuts, data locations and troubleshooting.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Amiri:wght@400;700&display=swap">
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/manual.css">
+<link rel="alternate" hreflang="ar" href="ar/">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="top-in">
+    <a class="mark" href="../">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <b>X Desktop</b>
+    </a>
+    <span class="spacer"></span>
+    <nav aria-label="Primary">
+      <a href="../">Overview</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="https://github.com/Rassmos999/x-desktop">GitHub</a>
+      <a class="lang" href="ar/" hreflang="ar" lang="ar">العربية</a>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+
+  <nav class="toc" aria-label="Manual contents">
+    <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc-list">
+      <span>Contents</span>
+      <span aria-hidden="true">▾</span>
+    </button>
+    <h2>Contents</h2>
+    <ol id="toc-list">
+      <li><a href="#install"><span class="i">01</span>Installation</a></li>
+      <li><a href="#first-run"><span class="i">02</span>First run and sign-in</a></li>
+      <li><a href="#models"><span class="i">03</span>Models</a></li>
+      <li><a href="#dashboard"><span class="i">04</span>Dashboard</a></li>
+      <li><a href="#translation"><span class="i">05</span>Translation</a></li>
+      <li><a href="#filtering"><span class="i">06</span>Timeline filtering</a></li>
+      <li><a href="#shortcuts"><span class="i">07</span>Keyboard shortcuts</a></li>
+      <li><a href="#data"><span class="i">08</span>Data and removal</a></li>
+      <li><a href="#troubleshooting"><span class="i">09</span>Troubleshooting</a></li>
+      <li><a href="#advanced"><span class="i">10</span>Advanced reference</a></li>
+      <li><a href="#sources"><span class="i">11</span>Sources</a></li>
+    </ol>
+  </nav>
+
+  <main class="doc" id="main">
+    <h1>X Desktop Manual</h1>
+    <p class="intro">
+      Everything needed to install the client, give it a model, translate posts, and recover when
+      something is not ready. Commands are copy-ready, paths are exact, and every capability
+      described here is implemented in the published source.
+    </p>
+
+    <!-- 1 ------------------------------------------------------------------ -->
+    <section id="install">
+      <p class="marker"><span class="num">01</span><span class="label">Installation</span></p>
+      <h2>Installation</h2>
+      <p>
+        Choose the package for your system. Each one installs the application, the desktop entry, the
+        icon set, and a <code>x-desktop</code> launcher on your <code>PATH</code>. None of them install a model;
+        that is a separate step, covered in <a href="#models">Models</a>.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <caption class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Download links for each platform</caption>
+          <thead>
+            <tr><th scope="col">System</th><th scope="col">Package</th><th scope="col">Install command</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Debian, Ubuntu</td>
+              <td><code>.deb</code></td>
+              <td><code>sudo apt install ./x-desktop_1.0.1_amd64.deb</code></td>
+            </tr>
+            <tr>
+              <td>Fedora, RHEL</td>
+              <td><code>.rpm</code></td>
+              <td><code>sudo dnf install ./x-desktop-1.0.1-1.x86_64.rpm</code></td>
+            </tr>
+            <tr>
+              <td>Arch Linux</td>
+              <td><code>.pkg.tar.zst</code></td>
+              <td><code>sudo pacman -U x-desktop-1.0.1-1-x86_64.pkg.tar.zst</code></td>
+            </tr>
+            <tr>
+              <td>Windows x64</td>
+              <td>portable <code>.zip</code></td>
+              <td>Extract, then run <code>x-desktop.exe</code>. <code>install-shortcut.bat</code> adds a desktop shortcut.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>All four are attached to the latest release:</p>
+      <div class="code">
+        <div class="code-head"><span>Release downloads</span></div>
+        <pre><code>https://github.com/Rassmos999/x-desktop/releases/latest</code></pre>
+      </div>
+
+      <h3>From source</h3>
+      <p>Building needs Node.js 20 or newer, Python 3, <code>make</code>, and either ImageMagick or <code>librsvg</code> for icon generation.</p>
+      <div class="code">
+        <div class="code-head"><span>Build and install for the current user</span></div>
+        <pre><code>git clone https://github.com/Rassmos999/x-desktop.git
+cd x-desktop
+npm install
+make icons
+make install      # installs to ~/.local; use PREFIX=/usr with sudo for a system install
+x-desktop</code></pre>
+      </div>
+
+      <h3>Uninstall</h3>
+      <div class="code">
+        <div class="code-head"><span>Remove the application files</span></div>
+        <pre><code>make uninstall                                 # source install
+sudo apt remove x-desktop                      # Debian, Ubuntu
+sudo dnf remove x-desktop                       # Fedora, RHEL
+sudo pacman -R x-desktop                        # Arch Linux</code></pre>
+      </div>
+      <p>Removing the application leaves your profile and models in place. See <a href="#data">Data and removal</a> to delete those too.</p>
+    </section>
+
+    <!-- 2 ------------------------------------------------------------------ -->
+    <section id="first-run">
+      <p class="marker"><span class="num">02</span><span class="label">First run</span></p>
+      <h2>First run and sign-in</h2>
+      <p>
+        Launch X Desktop from your application menu or by running <code>x-desktop</code>. The first window
+        loads <span class="ltr mono">x.com</span> in a profile created solely for this application, so an
+        existing browser session is neither used nor modified.
+      </p>
+      <p>
+        Sign in with your X account as usual. If you sign in with Google or Apple, the client routes that
+        step to your system browser, because those providers refuse to authenticate inside embedded views.
+      </p>
+
+      <h3>Session Assistant</h3>
+      <p>
+        If a browser sign-in cannot complete the embedded session, use the Session Assistant to import the
+        session token directly. Open it from the tray menu or by right-clicking anywhere and choosing
+        <strong>Session Assistant</strong>.
+      </p>
+      <ol>
+        <li>Sign in to X in a normal browser window.</li>
+        <li>Open the browser's developer tools, find the <code>auth_token</code> cookie for <span class="ltr mono">x.com</span>, and copy its value. Pasting the whole cookie string also works — the client extracts the token.</li>
+        <li>Paste it into the Session Assistant and apply. The token is written to the isolated session and the window reloads signed in.</li>
+      </ol>
+      <div class="note" data-tone="warn">
+        <span class="tag">Treat it as a password</span>
+        <p>The <code>auth_token</code> grants full access to your account. Never paste it into a site you do not control, and sign out of X if you believe it was exposed.</p>
+      </div>
+    </section>
+
+    <!-- 3 ------------------------------------------------------------------ -->
+    <section id="models">
+      <p class="marker"><span class="num">03</span><span class="label">Models</span></p>
+      <h2>Models</h2>
+      <p>
+        The AI engine is a local model server. It needs two things: the runtime binary, and at least one
+        model file. Both live outside the application directory so they survive updates.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">What</th><th scope="col">Linux</th><th scope="col">Windows</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Models</td>
+              <td><code>~/.local/share/x-desktop/models/</code></td>
+              <td><code>%USERPROFILE%\.local\share\x-desktop\models\</code></td>
+            </tr>
+            <tr>
+              <td>Runtime</td>
+              <td><code>~/.local/share/x-desktop/bin/</code></td>
+              <td><code>%USERPROFILE%\.local\share\x-desktop\bin\</code></td>
+            </tr>
+            <tr>
+              <td>Active-model setting</td>
+              <td colspan="2"><code>config.json</code>, in the folder <em>above</em> <code>models/</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Automatic setup</h3>
+      <p>
+        The setup script installs the llama.cpp Vulkan runtime, downloads the required Gemma model, and
+        places both in the folders above. Run it once after installing the client:
+      </p>
+      <div class="code">
+        <div class="code-head"><span>Linux · downloads about 3 GB</span></div>
+        <pre><code>./tools/setup-ai-engine.sh</code></pre>
+      </div>
+      <p>On Windows, download the runtime archive and the model file into the two folders shown above:</p>
+      <div class="code">
+        <div class="code-head"><span>Windows · runtime</span></div>
+        <pre><code>https://github.com/ggml-org/llama.cpp/releases/download/b10828/llama-b10828-bin-win-vulkan-x64.zip</code></pre>
+      </div>
+
+      <h3>Model files</h3>
+      <p>
+        The engine loads one model at a time. Gemma is required for the AI engine; the vision pair is
+        optional and only adds translation of text inside images.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">File</th><th scope="col">Size</th><th scope="col">Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>gemma-4-E2B-it-Q4_K_M.gguf</code></td>
+              <td>2.89 GB</td>
+              <td>Required. The text translation model.</td>
+            </tr>
+            <tr>
+              <td><code>Qwen3VL-2B-Instruct-Q4_K_M.gguf</code></td>
+              <td>1.03 GB</td>
+              <td>Optional. Vision model for text inside images.</td>
+            </tr>
+            <tr>
+              <td><code>mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf</code></td>
+              <td>425 MB</td>
+              <td>Optional. The projector the vision model needs. A projector alone does nothing.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>Linux · fetch each file directly</span></div>
+        <pre><code>M="$HOME/.local/share/x-desktop/models"; mkdir -p "$M"; cd "$M"
+
+curl -L -O https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf
+
+# optional vision pair
+curl -L -O https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF/resolve/main/Qwen3VL-2B-Instruct-Q4_K_M.gguf
+curl -L -O https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF/resolve/main/mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf</code></pre>
+      </div>
+
+      <div class="note" data-tone="info">
+        <span class="tag">How vision is decided</span>
+        <p>Image translation is offered only when the active model is vision-capable <em>and</em> a projector file is present. If either is missing, the client does not show the translate action on images rather than offering something that cannot answer.</p>
+      </div>
+
+      <h3>Adding your own model</h3>
+      <p>
+        Any GGUF text model placed in the models folder is listed in the dashboard and can be selected
+        there. Names are matched, not magic: a file whose name begins with <code>mmproj</code> is treated as a
+        projector and is never loaded as a model, and a file is treated as vision-capable when its name
+        contains a recognised vision family such as <code>Qwen…VL</code>.
+      </p>
+      <p>
+        Two limits apply. The engine loads exactly one file at a time, and the context window is
+        configured at 12,288 tokens, so a model that cannot hold that much will be clamped or refuse to
+        load. Larger models also consume proportionally more VRAM.
+      </p>
+
+      <div class="note" data-tone="warn">
+        <span class="tag">Switching takes a few seconds</span>
+        <p>Changing the active model releases the GPU memory holding the current one and loads the new one, which takes roughly two to five seconds on the reference hardware. The dashboard reports this as a switching state; it is not a freeze.</p>
+      </div>
+    </section>
+
+    <!-- 4 ------------------------------------------------------------------ -->
+    <section id="dashboard">
+      <p class="marker"><span class="num">04</span><span class="label">Dashboard</span></p>
+      <h2>Dashboard</h2>
+      <p>
+        The engine dashboard runs at <span class="ltr mono">http://127.0.0.1:28492</span>. Open it with
+        <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd>, from the tray menu, or by right-clicking and choosing
+        <strong>AI Telemetry Dashboard</strong>.
+      </p>
+
+      <h3>What it reports</h3>
+      <ul>
+        <li><strong>Engine state</strong>: ready, starting, switching, or offline, with the label spelling out which.</li>
+        <li><strong>VRAM and temperature</strong>: read from the GPU, not estimated.</li>
+        <li><strong>Throughput</strong>: tokens per second, taken from real inference. It reads <code>--</code> until a translation has actually been measured.</li>
+        <li><strong>Context allocation</strong>: system, input and output tokens against the 12,288-token window.</li>
+        <li><strong>Operations log</strong>: the last translations, each tagged with the engine that produced it.</li>
+      </ul>
+
+      <h3>Model panel</h3>
+      <p>
+        The model panel lists every model file in the folder, marks the active one, names the dashboard
+        path, and switches between them. <strong>تبديل الموديل</strong> / <em>Switch model</em> restarts the engine on
+        the selected file and reports how long it took; <strong>Open folder</strong> reveals the models directory
+        in your file manager.
+      </p>
+
+      <h3>Test console</h3>
+      <p>
+        Paste text and run it through either engine. The response includes the round-trip time and the
+        answer, so a claim about translation quality can be checked before you rely on it in the timeline.
+      </p>
+    </section>
+
+    <!-- 5 ------------------------------------------------------------------ -->
+    <section id="translation">
+      <p class="marker"><span class="num">05</span><span class="label">Translation</span></p>
+      <h2>Translation</h2>
+      <p>There are two engines and they are not equivalent. Knowing which one is answering is the point.</p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">Aspect</th><th scope="col">AI engine</th><th scope="col">Fast engine</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Runs where</td>
+              <td>On your GPU, served from <span class="ltr mono">127.0.0.1:28491</span></td>
+              <td>Cloud request to <span class="ltr mono">translate.googleapis.com</span></td>
+            </tr>
+            <tr>
+              <td>Needs a model</td>
+              <td>Yes</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Text leaves your machine</td>
+              <td>No</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>Typical use</td>
+              <td>Technical or idiomatic text where wording matters</td>
+              <td>Getting the gist immediately, or working without a GPU</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note" data-tone="warn">
+        <span class="tag">Read this before relying on privacy wording</span>
+        <p>The AI engine keeps text on your machine. The Fast engine does not — it sends the text to Google. The client also falls back to the cloud path when the local model returns nothing usable, so a request you started on the AI engine can still complete over the network. The dashboard tags each result in the operations log with the engine that produced it, which is the reliable way to tell which path ran.</p>
+      </div>
+
+      <h3>Translating a post</h3>
+      <ul>
+        <li><strong>Whole post</strong>: use the translate action beneath the post text. The result appears in place, with a control to restore the original.</li>
+        <li><strong>A phrase</strong>: select the text and use the floating tooltip to translate, copy, or replace it inline.</li>
+        <li><strong>Switch engine</strong>: the tooltip and the inline action both let you re-run the same text on the other engine.</li>
+        <li><strong>Text inside an image</strong>: appears as a translate action on the photo, and only when a vision model and its projector are both installed.</li>
+      </ul>
+    </section>
+
+    <!-- 6 ------------------------------------------------------------------ -->
+    <section id="filtering">
+      <p class="marker"><span class="num">06</span><span class="label">Filtering</span></p>
+      <h2>Timeline filtering</h2>
+      <p>
+        Promoted posts, boosted entries, and subscription banners are removed from the timeline before
+        they are drawn, and requests to known advertising and analytics endpoints are blocked at the
+        network layer. The block list covers Twitter and X advertising endpoints, Google ad services,
+        and DoubleClick.
+      </p>
+      <p>
+        Because filtering happens on requests rather than on finished markup, it removes the promoted
+        entries themselves without affecting video or image loading from the same timeline.
+      </p>
+    </section>
+
+    <!-- 7 ------------------------------------------------------------------ -->
+    <section id="shortcuts">
+      <p class="marker"><span class="num">07</span><span class="label">Shortcuts</span></p>
+      <h2>Keyboard shortcuts</h2>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">Shortcut</th><th scope="col">Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Q</kbd></td><td>Quit and release GPU memory held by the engine</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></td><td>Open the engine dashboard</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>1</kbd> … <kbd>5</kbd></td><td>Home, Explore, Notifications, Messages, Bookmarks</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>N</kbd></td><td>Compose a new post</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>=</kbd></td><td>Zoom in</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>-</kbd></td><td>Zoom out</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>0</kbd></td><td>Reset zoom to 100%</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + scroll wheel</td><td>Zoom continuously</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></td><td>Developer tools</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Right-clicking inside the window opens a menu with translate, open in browser, copy link, save
+        image, navigation, and zoom actions. On Linux, media keys and desktop media widgets are handled
+        through MPRIS; closing the window keeps the application running in the tray.
+      </p>
+    </section>
+
+    <!-- 8 ------------------------------------------------------------------ -->
+    <section id="data">
+      <p class="marker"><span class="num">08</span><span class="label">Data</span></p>
+      <h2>Data and removal</h2>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">What</th><th scope="col">Linux</th><th scope="col">Windows</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Profile: cookies, storage, cache</td>
+              <td><code>~/.config/x-desktop/</code></td>
+              <td><code>%APPDATA%\x-desktop\</code></td>
+            </tr>
+            <tr>
+              <td>Models and runtime</td>
+              <td><code>~/.local/share/x-desktop/</code></td>
+              <td><code>%USERPROFILE%\.local\share\x-desktop\</code></td>
+            </tr>
+            <tr>
+              <td>Application files</td>
+              <td><code>~/.local/lib/x-desktop/</code> for a user install, <code>/usr/lib/x-desktop/</code> for a system install</td>
+              <td>The extracted folder</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Deleting the profile signs you out and clears the isolated session. Deleting the models folder
+        frees roughly 3 to 4.5 GB depending on which models you downloaded; the next launch simply finds
+        no model and says so.
+      </p>
+    </section>
+
+    <!-- 9 ------------------------------------------------------------------ -->
+    <section id="troubleshooting">
+      <p class="marker"><span class="num">09</span><span class="label">Troubleshooting</span></p>
+      <h2>Troubleshooting</h2>
+
+      <h3>The dashboard says the engine is offline</h3>
+      <p>
+        Nothing is answering on port 28491. Check three things in order: a model file exists in the
+        models folder, the <code>llama-server</code> binary exists in the runtime folder, and no other process
+        is holding the port.
+      </p>
+      <div class="code">
+        <div class="code-head"><span>Linux · check what the engine is doing</span></div>
+        <pre><code>ls -la ~/.local/share/x-desktop/models/ ~/.local/share/x-desktop/bin/llama-server
+curl -s http://127.0.0.1:28491/health
+ss -ltnp | grep 28491</code></pre>
+      </div>
+      <p>Start it by hand to see the engine's own error, which the client discards when running detached:</p>
+      <div class="code">
+        <div class="code-head"><span>Linux · run the engine in the foreground</span></div>
+        <pre><code>~/.local/share/x-desktop/bin/llama-server \
+  --model ~/.local/share/x-desktop/models/gemma-4-E2B-it-Q4_K_M.gguf \
+  --port 28491 --host 127.0.0.1 -ngl 99 -fa on -c 12288</code></pre>
+      </div>
+
+      <h3>Translation returns nothing, or the wrong engine answers</h3>
+      <p>
+        Confirm the model is loaded by watching the AI engine, not the Fast one, in the dashboard test
+        console. When the local model produces nothing usable the client completes the request through
+        the cloud path, so a successful result does not by itself prove the local engine answered — the
+        operations log shows which engine it was.
+      </p>
+
+      <h3>Switching a model appears to hang</h3>
+      <p>
+        It is reallocating GPU memory. The dashboard shows a switching state, and the switch reports its
+        duration when it completes. If it fails instead, the panel names the reason and keeps the
+        previous model selected. A switch that exceeds its timeout is reported as a failure rather than
+        waiting indefinitely.
+      </p>
+
+      <h3>Google sign-in is refused</h3>
+      <p>
+        Google blocks embedded views. The client detects that and opens your system browser instead,
+        then imports the session through the Session Assistant. If the import does not stick, the token
+        has most likely expired — repeat the import with a freshly copied value.
+      </p>
+
+      <h3>Wayland window rules</h3>
+      <p>
+        The release includes example rules for Niri and Hyprland under <code>usr/share/doc/x-desktop/</code>.
+        They are examples, not requirements: copy the ones you want into your own configuration.
+      </p>
+
+      <h3>GPU memory is still held after closing the window</h3>
+      <p>
+        Closing the window keeps the application in the tray, and the engine keeps its model loaded so
+        the next translation is immediate. Use <kbd>Ctrl</kbd> + <kbd>Q</kbd> or the tray's <strong>Quit</strong> action to stop
+        the engine and release the memory.
+      </p>
+    </section>
+
+    <!-- 10 ----------------------------------------------------------------- -->
+    <section id="advanced">
+      <p class="marker"><span class="num">10</span><span class="label">Advanced</span></p>
+      <h2>Advanced reference</h2>
+      <p>
+        How the engine is actually launched, for readers who intend to tune it. The client starts the
+        server with these arguments; the same command can be run by hand for diagnosis.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">Argument</th><th scope="col">Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>--model</code></td><td>The active model file, resolved from <code>config.json</code></td></tr>
+            <tr><td><code>--port</code> / <code>--host</code></td><td>Local server on <code>127.0.0.1:28491</code></td></tr>
+            <tr><td><code>-ngl 99</code></td><td>Offload all layers to the GPU</td></tr>
+            <tr><td><code>-fa on</code></td><td>Flash attention</td></tr>
+            <tr><td><code>-c 12288</code></td><td>Context window in tokens</td></tr>
+            <tr><td><code>-t 6</code></td><td>CPU threads used alongside the GPU</td></tr>
+            <tr><td><code>-np 1</code></td><td>A single parallel slot; text and vision use separate slot ids</td></tr>
+            <tr><td><code>--mmproj</code></td><td>Attached only when the active model is vision-capable and the projector exists</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Runtime</h3>
+      <p>
+        The engine is a llama.cpp server build, <span class="ltr mono">b10828</span>, compiled with the Vulkan
+        backend. It carries its own shared libraries in the runtime folder, which is why the client sets
+        the library path before launching it rather than relying on system packages. The archive is
+        <span class="ltr mono">llama-b10828-bin-ubuntu-vulkan-x64.tar.gz</span> on Linux and
+        <span class="ltr mono">llama-b10828-bin-win-vulkan-x64.zip</span> on Windows.
+      </p>
+
+      <h3>Endpoints</h3>
+      <p>The dashboard and engine expose a small local HTTP surface, bound to the loopback interface only.</p>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">Endpoint</th><th scope="col">Port</th><th scope="col">Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>GET /api/telemetry</code></td><td>28492</td><td>Engine state, model, VRAM, throughput, history</td></tr>
+            <tr><td><code>GET /api/models</code></td><td>28492</td><td>Installed models, active model, vision availability</td></tr>
+            <tr><td><code>POST /api/models/active</code></td><td>28492</td><td>Switch the active model and restart the engine</td></tr>
+            <tr><td><code>POST /api/models/reveal</code></td><td>28492</td><td>Open the models folder in the file manager</td></tr>
+            <tr><td><code>POST /api/translate</code></td><td>28492</td><td>Translate text through either engine</td></tr>
+            <tr><td><code>POST /api/translate-image</code></td><td>28492</td><td>Translate text found in an image</td></tr>
+            <tr><td><code>GET /health</code></td><td>28491</td><td>Engine liveness, used by the client</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The model endpoints change state, so they accept requests only from this machine's own dashboard
+        origin. Read-only endpoints and the translation endpoints are unaffected.
+      </p>
+    </section>
+
+    <!-- 11 ----------------------------------------------------------------- -->
+    <section id="sources">
+      <p class="marker"><span class="num">11</span><span class="label">Sources</span></p>
+      <h2>Sources</h2>
+      <p>Everything this manual asserts about downloads and file sizes was taken from these upstream locations.</p>
+      <ol>
+        <li>unsloth, <a href="https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF">Gemma-4-E2B-it GGUF</a>: the required text model.</li>
+        <li>Qwen, <a href="https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF">Qwen3-VL-2B-Instruct GGUF</a>: the optional vision model and its projector.</li>
+        <li>ggml-org, <a href="https://github.com/ggml-org/llama.cpp/releases/tag/b10828">llama.cpp build b10828</a>: the inference runtime.</li>
+        <li>Rassmos999, <a href="https://github.com/Rassmos999/x-desktop/releases">X Desktop releases</a>: the installers listed above.</li>
+      </ol>
+    </section>
+
+  </main>
+</div>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span>X Desktop Manual</span>
+    <span class="ltr">MIT License</span>
+    <span class="spacer" style="margin-inline-start:auto;"></span>
+    <a href="../">Overview</a>
+    <a href="https://github.com/Rassmos999/x-desktop">GitHub</a>
+    <a href="ar/" hreflang="ar" lang="ar">العربية</a>
+  </div>
+</footer>
+
+<script src="../assets/manual.js" defer></script>
+</body>
+</html>

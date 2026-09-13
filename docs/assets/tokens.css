@@ -1,0 +1,158 @@
+/* X Desktop public surfaces — shared tokens and primitives.
+
+   World: dark cinematic editorial. Adopted from a reviewed design direction:
+   warm near-black ground, high-contrast display serif at large sizes with
+   negative tracking, tiny uppercase mono labels with wide positive tracking,
+   copper numerals, hairline rules, asymmetric editorial grids.
+
+   Arabic translation of the type system, stated rather than left to fallback:
+   the reference world is built on a Latin-only didone. Amiri — a high-contrast
+   Naskh revival — carries the Arabic display voice, and Noto Sans Arabic
+   carries Arabic body text. The character is preserved (high stroke contrast,
+   classical serif) without pretending one face exists in both scripts.
+
+   Brand heritage: X-blue is the action colour, on primary buttons only.
+   Copper is typographic — numerals, markers, emphasis — never a control.
+
+   Elevation is declared once, as a hairline border. No shadows, no glass. */
+
+:root {
+  --ground: #14110f;
+  --panel: #1c1916;
+  --well: #100e0c;
+
+  --text: #e8decd;
+  --muted: #b4a99a;          /* warm, and well clear of 4.5:1 on panel */
+  --faint: #8d8171;          /* large text and meta only */
+
+  --copper: #b7825e;
+  --copper-ink: #d0a381;
+
+  --line: rgba(232, 222, 205, 0.16);
+  --line-strong: rgba(232, 222, 205, 0.34);
+
+  --ok: #6f9f5f;
+  --ok-ink: #a3c98f;
+  --warn: #c08a3e;
+  --warn-ink: #e0b169;
+  --bad: #b4544a;
+  --bad-ink: #e08a80;
+
+  --action: #1d9bf0;
+  --action-deep: #1a8cd8;
+
+  --display: "Bodoni Moda", "Amiri", Georgia, "Times New Roman", serif;
+  --sans: "Manrope", "Noto Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --gutter: clamp(22px, 4.4vw, 72px);
+  --focus: #d0a381;
+}
+
+/* Arabic documents swap the display voice to Amiri directly, so Arabic
+   headings never fall through to a Latin serif's Arabic glyphs. */
+[dir="rtl"] { --display: "Amiri", "Noto Naskh Arabic", Georgia, serif; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scrollbar-color: #3a322a var(--ground); scroll-behavior: smooth; scroll-padding-top: 24px; }
+
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--copper); color: var(--ground); }
+
+.mono, code, kbd, time { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.ltr { direction: ltr; unicode-bidi: isolate; }
+
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+
+a { color: var(--copper-ink); text-decoration: none; }
+a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Display voice: large, tightly tracked, balanced. */
+h1, h2, h3 { font-family: var(--display); font-weight: 400; }
+.display {
+  font-size: clamp(38px, 6.1vw, 82px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.display em { font-style: italic; color: var(--copper-ink); }
+
+/* The mono label is the system's connective tissue: wide positive tracking at
+   a small size is what makes a technical label read as considered. Never
+   letter-spaced or uppercased when it carries Arabic. */
+.label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+[dir="rtl"] .label { letter-spacing: 0; text-transform: none; font-family: var(--sans); }
+
+.num { font-family: var(--mono); color: var(--copper); }
+
+/* Section marker: number, rule, name. The number is real — it matches the table
+   of contents and the reading order, so it carries navigation, not decoration. */
+.marker { display: flex; align-items: center; gap: 14px; }
+.marker .num { font-size: 10px; letter-spacing: 1px; }
+.marker .rule { flex: 1; height: 1px; background: var(--line); }
+
+.skip {
+  position: absolute; inset-inline-start: var(--gutter); top: 14px; z-index: 100;
+  padding: 13px 20px; background: var(--text); color: var(--ground) !important;
+  font-size: 12px; transform: translateY(-220%); transition: transform 150ms ease;
+}
+.skip:focus { transform: translateY(0); }
+
+/* Header: a quiet bar over one hairline rule. */
+.top { position: sticky; top: 0; z-index: 50; background: var(--ground); border-bottom: 1px solid var(--line); }
+.top-in { display: flex; align-items: center; gap: 26px; padding: 21px var(--gutter); }
+.mark { display: flex; align-items: center; gap: 12px; color: var(--text); }
+.mark:hover { color: var(--text); text-decoration: none; }
+.mark svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
+.mark b { font-family: var(--display); font-size: 20px; font-weight: 400; letter-spacing: -0.01em; white-space: nowrap; }
+.top-in { flex-wrap: wrap; }
+.top nav { flex-wrap: wrap; }
+.top .spacer { margin-inline-start: auto; }
+.top nav { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.top nav a { color: var(--muted); }
+.top nav a:hover, .top nav a[aria-current="page"] { color: var(--text); text-decoration: none; }
+
+.lang { color: var(--muted); border: 1px solid var(--line-strong); padding: 6px 12px; }
+.lang:hover { color: var(--text); border-color: var(--text); text-decoration: none; }
+
+/* Buttons: the outline treatment inverts on hover; the primary action is the
+   one place X-blue appears. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 28px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.7px; text-transform: uppercase;
+  padding: 15px 20px; min-height: 48px;
+  border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  cursor: pointer; transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+.btn:hover { background: var(--text); color: var(--ground); text-decoration: none; border-color: var(--text); }
+.btn-primary { background: var(--action); border-color: var(--action); color: #fff; }
+.btn-primary:hover { background: var(--action-deep); border-color: var(--action-deep); color: #fff; }
+[dir="rtl"] .btn { letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: 13px; }
+
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter); }
+
+.foot { margin-top: 90px; border-top: 1px solid var(--line); padding: 28px 0 60px; }
+.foot-in { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 0 var(--gutter); max-width: 1240px; margin: 0 auto; }
+.foot a { color: var(--muted); }
+.foot a:hover { color: var(--text); text-decoration: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

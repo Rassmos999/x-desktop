@@ -1,122 +1,118 @@
 ---
-name: "X Desktop Dashboard"
-description: "Mission-control telemetry wall for the local AI engine — Arabic-first ops room, dark from the night-ops scene."
+name: "X Desktop"
+description: "Dark cinematic editorial — warm near-black ground, high-contrast display serif, copper numerals, hairline rules. Public surfaces and the engine dashboard share one world."
 colors:
-  ground: "#06080c"
-  panel: "#0b0f15"
-  well: "#04060a"
-  text: "#e9eef5"
-  muted: "#9facc0"
-  line: "rgba(255, 255, 255, 0.09)"
-  line-strong: "rgba(255, 255, 255, 0.18)"
-  ok: "#22c55e"
-  ok-ink: "#4ade80"
-  warn: "#f59e0b"
-  warn-ink: "#fbbf24"
-  fault: "#ef4444"
-  fault-ink: "#f87171"
+  ground: "#14110f"
+  panel: "#1c1916"
+  well: "#100e0c"
+  text: "#e8decd"
+  muted: "#b4a99a"
+  faint: "#8d8171"
+  copper: "#b7825e"
+  copper-ink: "#d0a381"
+  line: "rgba(232, 222, 205, 0.16)"
+  line-strong: "rgba(232, 222, 205, 0.34)"
+  ok: "#6f9f5f"
+  ok-ink: "#a3c98f"
+  warn: "#c08a3e"
+  warn-ink: "#e0b169"
+  bad: "#b4544a"
+  bad-ink: "#e08a80"
   action: "#1d9bf0"
   action-deep: "#1a8cd8"
-  engine-ai: "#a855f7"
-  engine-ai-ink: "#c084fc"
-  engine-fast: "#38bdf8"
-  engine-fast-ink: "#7dd3fc"
-  tank-sys: "#1d4ed8"
-  tank-in: "#0284c7"
-  tank-out: "#047857"
-  focus: "#7dd3fc"
 typography:
-  data:
-    fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
-    fontWeight: 600
-    lineHeight: 1.3
-  label:
-    fontFamily: '"Noto Sans Arabic", "IBM Plex Sans", system-ui, sans-serif'
-    fontSize: "12px"
+  display:
+    fontFamily: '"Bodoni Moda", "Amiri", Georgia, serif'
     fontWeight: 400
-    lineHeight: 1.6
-  heading:
-    fontFamily: '"Noto Sans Arabic", "IBM Plex Sans", system-ui, sans-serif'
-    fontSize: "16px"
-    fontWeight: 600
-    lineHeight: 1.6
-  body-ar:
-    fontFamily: '"Noto Sans Arabic", "IBM Plex Sans", system-ui, sans-serif'
+    lineHeight: 1.04
+    letterSpacing: "-0.035em"
+  heading-ar:
+    fontFamily: '"Amiri", "Noto Naskh Arabic", Georgia, serif'
+    fontWeight: 400
+    lineHeight: 1.25
+  body:
+    fontFamily: '"Manrope", "Noto Sans Arabic", system-ui, sans-serif'
     fontSize: "15px"
-    fontWeight: 400
-    lineHeight: 1.9
+    lineHeight: 1.8
+  label:
+    fontFamily: '"JetBrains Mono", ui-monospace, monospace'
+    fontSize: "10px"
+    letterSpacing: "1.7px"
+  data:
+    fontFamily: '"JetBrains Mono", ui-monospace, monospace'
+    fontWeight: 500
+    lineHeight: 1.8
 rounded:
-  panel: "14px"
-  control: "8px"
-  well: "10px"
-  pill: "5px"
+  panel: "0px"
+  control: "0px"
 spacing:
-  cut: "26px"
-  panel: "20px"
-  row: "17px"
-  tight: "10px"
+  gutter: "clamp(22px, 4.4vw, 72px)"
+  section: "96px"
 components:
-  readout-value:
-    typography: "{typography.data}"
-    textColor: "{colors.text}"
-  readout-label:
-    typography: "{typography.label}"
-    textColor: "{colors.muted}"
   button-primary:
     backgroundColor: "{colors.action}"
     textColor: "#ffffff"
-    rounded: "{rounded.control}"
-    padding: "9px 22px"
-  button-primary-hover:
-    backgroundColor: "{colors.action-deep}"
-    textColor: "#ffffff"
-    rounded: "{rounded.control}"
-    padding: "9px 22px"
-  button-ghost:
+  button-outline:
     backgroundColor: "transparent"
     textColor: "{colors.text}"
-    rounded: "{rounded.control}"
-    padding: "9px 22px"
-  status-ok:
-    textColor: "{colors.ok-ink}"
-  status-idle:
-    textColor: "{colors.warn-ink}"
-  pill-ai:
-    textColor: "{colors.engine-ai-ink}"
-    rounded: "{rounded.pill}"
-  pill-fast:
-    textColor: "{colors.engine-fast-ink}"
-    rounded: "{rounded.pill}"
+    border: "1px solid {colors.line-strong}"
+  marker-number:
+    textColor: "{colors.copper}"
+  note:
+    backgroundColor: "{colors.panel}"
+    border: "1px solid {colors.line}"
 ---
 
 ## Overview
 
-Telemetry Wall: a single-viewport ops room for one local engine. Status rail at inline-start, numbered test console first in the main column, context tank plus route states, operations log last. Dark is picked from the use scene (late-night GPU ops), not the category. Severity is always color plus glyph plus label, never color alone. Data reads in tabular mono, LTR-isolated inside RTL Arabic prose.
+Dark cinematic editorial. The world was adopted from a reviewed design direction and then
+translated onto this product: a warm near-black ground rather than a cool one, enormous
+high-contrast display serif at negative tracking, very small uppercase mono labels at wide
+positive tracking, copper for numerals and markers, hairline rules instead of boxes, and
+asymmetric grids that give a section a lead column and a body column.
+
+Dark is chosen from the use scene — a GPU ops session at night — not from the category.
+One world covers all three surfaces: the public landing page (Persuade), the manual (Read),
+and the engine dashboard (Operate).
 
 ## Colors
 
-Ground near-black `{colors.ground}`, panels `{colors.panel}`, wells `{colors.well}`; hairline rules `{colors.line}`. Nominal green, degraded amber, fault red — each with a lighter ink variant for text on dark. Primary action keeps X-blue heritage `{colors.action}`. Engine tags: AI purple, Fast sky. Tank segments: system indigo, input sky-dark, output emerald. Muted body text holds ~7:1 on panels; faint grays are large-text/meta only.
+Ground, panels and wells form three steps of the same warm black; rules are warm translucent
+hairlines, never gray. Body text is the warm cream; secondary text holds about 7:1 on panel,
+and the faint tone is reserved for large text, labels and meta.
+
+Copper is **typographic**: numerals, section markers, emphasis, note edges. It is never a
+control. X-blue is the **action** colour and appears on the primary button and nothing else —
+brand heritage stays, in the one place a user clicks.
+
+Severity is stated three ways at once — colour, plus a written label, plus a shape where one
+exists — so it never depends on colour alone.
 
 ## Typography
 
-Arabic voice is Noto Sans Arabic first with an offline-safe system fallback (dashboard must render with no network). Data voice is JetBrains Mono first with tabular numerals; every number/code/clock is LTR-isolated (`direction: ltr; unicode-bidi: isolate`). Arabic labels never use letter-spacing or uppercase transforms. Headings are semibold 16px; body Arabic runs 1.9 line-height.
+The display voice is a Latin-only didone. Arabic has no didone, so the system states its
+translation rather than leaving it to fallback: **Amiri** — a high-contrast Naskh revival —
+carries Arabic display, and **Noto Sans Arabic** carries Arabic body text. The character is
+preserved (high stroke contrast, classical serif) without pretending one face serves both
+scripts. Arabic documents re-point the display token at Amiri outright.
+
+Mono labels are the connective tissue. Wide positive tracking at a small size is what makes a
+technical label read as considered. **Never letter-spaced or uppercased when the label carries
+Arabic** — Arabic is a connected script and tracking breaks its joins.
+
+Numerals, code, paths and commands are LTR-isolated inside RTL prose.
 
 ## Layout
 
-Max width 1240px; rail 300px plus fluid main; deep cut gaps (26px) between sections; tight groups inside panels. Desktop rail is sticky; below 960px everything stacks single-column with a static rail; below 480px the log table becomes label-stacked cards and headers hide accessibly. One lobe per section: each panel is dominated by one data region.
+Sections are asymmetric: a lead column beside a body column at roughly 1 : 2. Sections are
+separated by hairline rules, with more space above a heading than below it. The reading column
+is held to a comfortable measure; tables stay tables.
+
+Below 900px the grids collapse to one column, the manual's contents rail becomes a disclosure,
+and the landing hero's specification strip wraps.
 
 ## Elevation & Depth
 
-Elevation is declared once, as border: 1px hairline panels, no shadows. Wells sit one step deeper via darker fill. Status glyphs may glow (nominal pulse only, off under reduced motion).
+There is no shadow anywhere. Depth is a hairline border plus a darker fill for wells. Corners
+are square: this world has no rounded panels and no pills.
 
-## Shapes
-
-Panels 14px, controls 8px, wells 10px, pills 5px. Status glyphs: circle nominal, rounded square degraded, rotated square fault, triangle idle-route. Tank bar is an 18px slim gauge with true linear proportions and numeric legend.
-
-## Components
-
-Status rail: state line (glyph plus label, `role=status`), model line, readout rows (short label above LTR value), live clock. Console: three numbered steps (input with real label and LTR textarea, engine buttons with latency readout, output with `role=status`). Tank: slim bar with aria-labeled segments plus numeric legend and utilization caption. Routes: code plus glyph state rows. Log: table with engine pills and mono timestamps, `role=log` with polite live region, re-rendered only on content change; empty state explains itself.
-
-## Do's and Don'ts
-
-Do keep every test ID (`context-bar`, `starfieldCanvas`, `visionDropzone`, metric and control IDs) or update `tests/test-x-desktop.js` in the same diff. Do render feed and metrics with `textContent`, never `innerHTML`. Do pause polling when the document is hidden. Do keep the `/api/*` contract byte-compatible. Don't prefill the result box with invented translations; don't show measurements before they exist (`RTT —`); don't draw tank segments out of proportion for looks; don't use emoji or unicode glyphs as icons; don't add kickers, section numbers, or nested cards.

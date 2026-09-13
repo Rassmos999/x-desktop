@@ -26,17 +26,38 @@
     feed: $('feedList'), feedCount: $('feedCount'),
     input: $('txtInput'), btnAi: $('btnTranslateAi'),
     btnFast: $('btnTranslateFast'), latency: $('lblLatency'),
-    result: $('txtResult'), resultHint: $('resultHint')
+    result: $('txtResult'), resultHint: $('resultHint'),
+    modelSelect: $('modelSelect'), btnSwitch: $('btnSwitchModel'),
+    btnReveal: $('btnRevealModels'), modelsState: $('modelsState'),
+    modelsStateText: $('modelsStateText'), modelsCount: $('modelsCount'),
+    modelsDir: $('modelsDir'), modelHint: $('modelHint'), modelLatency: $('modelLatency')
   };
 
   var lastSig = '';
   var timer = null;
+  var lastEngineState = null;
+  // True from the moment a switch is submitted until it resolves. Polling must
+  // not report a disconnection while the engine is deliberately restarting.
+  var switching = false;
 
   function num(n, d) { return (n === undefined || n === null || isNaN(n)) ? '--' : n; }
 
   function setRail(state, label) {
     els.rail.setAttribute('data-state', state);
     els.railState.textContent = label;
+  }
+
+  function setModelState(tone, text, busy) {
+    els.modelsState.setAttribute('data-tone', tone);
+    els.modelsStateText.textContent = text;
+    var old = els.modelsState.querySelector('.spin');
+    if (old) old.remove();
+    if (busy) {
+      var sp = document.createElement('span');
+      sp.className = 'spin';
+      sp.setAttribute('aria-hidden', 'true');
+      els.modelsState.insertBefore(sp, els.modelsStateText);
+    }
   }
 
   function tickClock() {
@@ -113,23 +134,60 @@
   }
 
   function applyTelemetry(data) {
-    setRail('ok', 'المحرك يعمل');
-    if (data.activeModel) els.railModel.textContent = data.activeModel + ' · SLOT 0 · NOMINAL';
+    // A known switch outranks telemetry: the engine is up but not yet serving
+    // the new model, which is a working state, not a fault.
+    var state = data.engineState || (data.isReady === false ? 'offline' : 'ready');
+    if (switching || state === 'switching' || state === 'starting') {
+      setRail('warn', 'جارٍ تبديل الموديل');
+      els.railModel.textContent = (data.activeModelFile || data.activeModel || '—') + ' · ' +
+        (state === 'switching' ? 'SWITCHING' : 'LOADING');
+    } else if (state === 'ready') {
+      setRail('ok', 'المحرك يعمل');
+      if (data.activeModel) els.railModel.textContent = data.activeModel + ' · SLOT 0 · NOMINAL';
+    } else {
+      setRail('warn', 'المحرك متوقف');
+      els.railModel.textContent = (data.activeModel || 'لا موديل') + ' · OFFLINE';
+    }
+    // Model-panel status follows the engine only when that state actually
+    // changes, so it never overwrites a fresh switch result with chatter.
+    if (!switching && state !== lastEngineState) {
+      lastEngineState = state;
+      if (state === 'ready') setModelState('ok', 'المحرك يخدم الموديل المحدد الآن.', false);
+      else setModelState('warn', 'المحرك متوقف — لن يكتمل التبديل حتى يعمل المحرك.', false);
+    }
 
     els.vram.textContent = data.vramUsed === undefined ? '--' : data.vramUsed.toLocaleString('en-US');
     els.vramSub.textContent = '/ ' + (data.vramTotal || 8188) + ' MB';
     els.temp.textContent = num(data.gpuTemp);
-    var tps = data.tokensPerSec || 0;
-    els.speed.textContent = tps ? tps.toFixed(1) : '--';
+    var tps = data.tokensPerSec;
+    els.speed.textContent = (typeof tps === 'number' && tps > 0) ? tps.toFixed(1) : '--';
 
     els.tokens.textContent = (data.totalTokens || 0).toLocaleString('en-US');
     els.reqs.textContent = '/ ' + (data.requestCount || 0);
     els.cache.textContent = num(data.cacheSize);
     els.cacheSub.textContent = '· ' + (data.cacheHits || 0) + ' hit';
 
-    var total = data.totalContext || 8192;
-    var cm = data.contextMap || {};
-    var sys = cm.system || 85, inp = cm.input || 0, out = cm.output || 0;
+    // Unmeasured means unmeasured: show "--" and an inert bar instead of a
+    // plausible-looking number.
+    var total = data.totalContext;
+    var cm = data.contextMap;
+    if (!total || !cm) {
+      els.barSys.style.width = '0%';
+      els.barIn.style.width = '0%';
+      els.barOut.style.width = '0%';
+      els.barFree.style.width = '100%';
+      $('tankLegend').textContent = 'SYS — · IN — · OUT —';
+      $('tankFree').textContent = 'شاغر —';
+      els.ctxUtil.textContent = 'لم تُقس بعد — شغّل ترجمة لعرض التخصيص.';
+      setRoutes([
+        { path: '/api/telemetry', state: 'ok', label: '200' },
+        { path: '/api/translate', state: 'ok', label: '200' },
+        { path: '/api/translate-image', state: 'warn', label: 'IDLE' }
+      ]);
+      if (Array.isArray(data.history)) renderFeed(data.history);
+      return;
+    }
+    var sys = cm.system || 0, inp = cm.input || 0, out = cm.output || 0;
     var used = sys + inp + out;
     var free = Math.max(0, total - used);
     var pct = function (v) { return ((v / total) * 100).toFixed(1) + '%'; };
@@ -159,8 +217,17 @@
   }
 
   function applyOffline() {
+    // During a deliberate switch the engine is expected to be unreachable for a
+    // few seconds (VRAM release + weight load). Report that honestly instead of
+    // claiming the connection dropped.
+    if (switching) {
+      setRail('warn', 'جارٍ تبديل الموديل');
+      els.railModel.textContent = 'إعادة توزيع الذاكرة · LOADING';
+      return;
+    }
     setRail('bad', 'انقطع الاتصال');
     els.railModel.textContent = 'لا رد من :28492 · OFFLINE';
+    setModelState('bad', 'لا رد من لوحة التحكم على المنفذ 28492.', false);
     setRoutes([
       { path: '/api/telemetry', state: 'idle', label: 'لا اتصال' },
       { path: '/api/translate', state: 'idle', label: 'لا اتصال' },
@@ -231,6 +298,114 @@
   els.btnAi.addEventListener('click', function () { executeTranslation('ai'); });
   els.btnFast.addEventListener('click', function () { executeTranslation('auto'); });
 
+  // --- Model panel ---------------------------------------------------------
+
+  function loadModels() {
+    return fetch('/api/models')
+      .then(function (res) { if (!res.ok) throw new Error('http ' + res.status); return res.json(); })
+      .then(function (data) {
+        els.modelsDir.textContent = data.modelsDir || '—';
+        while (els.modelSelect.firstChild) els.modelSelect.removeChild(els.modelSelect.firstChild);
+
+        if (!data.models || !data.models.length) {
+          var none = document.createElement('option');
+          none.value = '';
+          none.textContent = 'لا موديلات';
+          els.modelSelect.appendChild(none);
+          els.modelSelect.disabled = true;
+          els.btnSwitch.disabled = true;
+          els.modelsCount.textContent = '0';
+          setModelState('warn', 'لم يُعثر على أي ملف GGUF في مجلد الموديلات.', false);
+          els.modelHint.textContent = 'نزّل ملف موديل إلى المجلد أعلاه ثم حدّث الصفحة.';
+          return;
+        }
+
+        data.models.forEach(function (m) {
+          var opt = document.createElement('option');
+          opt.value = m.file;
+          var gb = (m.size / (1024 * 1024 * 1024)).toFixed(2);
+          opt.textContent = m.file + '  ·  ' + gb + ' GB' + (m.vision ? '  ·  VISION' : '');
+          opt.selected = !!m.active;
+          els.modelSelect.appendChild(opt);
+        });
+
+        els.modelsCount.textContent = data.models.length + ' MODELS';
+        els.modelSelect.disabled = false;
+        els.btnSwitch.disabled = false;
+        els.modelHint.textContent = data.visionAvailable
+          ? 'الموديل البصري مفعّل: ترجمة النصوص داخل الصور متاحة.'
+          : 'ترجمة نصوص الصور غير مفعّلة — تتطلب موديلاً بصرياً وملف الإسقاط البصري معاً.';
+        if (!switching && lastEngineState === null) {
+          setModelState('idle', 'جاهز — اختر موديلاً ثم اضغط تبديل الموديل.', false);
+        }
+      })
+      .catch(function () {
+        els.modelsDir.textContent = '—';
+        setModelState('bad', 'تعذّر قراءة قائمة الموديلات من اللوحة.', false);
+      });
+  }
+
+  els.btnSwitch.addEventListener('click', function () {
+    var file = els.modelSelect.value;
+    if (!file || switching) return;
+
+    var previous = null;
+    for (var i = 0; i < els.modelSelect.options.length; i++) {
+      if (els.modelSelect.options[i].selected) previous = els.modelSelect.options[i].value;
+    }
+
+    switching = true;
+    var t0 = Date.now();
+    els.modelSelect.disabled = true;
+    els.btnSwitch.disabled = true;
+    els.modelLatency.textContent = '';
+    setModelState('warn', 'جارٍ تبديل الموديل وتفريغ الذاكرة…', true);
+    setRail('warn', 'جارٍ تبديل الموديل');
+    els.railModel.textContent = file + ' · SWITCHING';
+
+    fetch('/api/models/active', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: file })
+    }).then(function (res) {
+      return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+    }).then(function (r) {
+      switching = false;
+      var ms = Date.now() - t0;
+      if (r.ok && r.body.ok) {
+        setModelState('ok', 'تم تحميل الموديل المحدد على كرت الرسوم.', false);
+        lastEngineState = 'ready';
+        setRail('ok', 'المحرك يعمل');
+        els.modelLatency.textContent = 'زمن التبديل: ' + (ms / 1000).toFixed(1) + 's';
+        els.railModel.textContent = (r.body.activeModel || file) + ' · SLOT 0 · NOMINAL';
+      } else {
+        setModelState('bad', 'فشل تبديل الموديل: ' + (r.body.error || 'خطأ غير معروف.'), false);
+        lastEngineState = null;
+        els.modelHint.textContent = 'لم يتغيّر الموديل النشط. أعد المحاولة أو افتح المجلد للتحقق من الملف.';
+        if (previous) els.modelSelect.value = previous;
+      }
+    }).catch(function () {
+      switching = false;
+      setModelState('bad', 'تعذّر الوصول إلى اللوحة أثناء التبديل.', false);
+      if (previous) els.modelSelect.value = previous;
+    }).then(function () {
+      els.modelSelect.disabled = false;
+      els.btnSwitch.disabled = false;
+      loadModels();
+      fetchTelemetry();
+    });
+  });
+
+  els.btnReveal.addEventListener('click', function () {
+    fetch('/api/models/reveal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (res) { return res.json(); })
+      .then(function (r) {
+        if (r && r.ok) setModelState('ok', 'تم فتح مجلد الموديلات في مدير الملفات.', false);
+        else setModelState('bad', (r && r.error) || 'تعذّر فتح المجلد.', false);
+      })
+      .catch(function () { setModelState('bad', 'تعذّر فتح المجلد.', false); });
+  });
+
   // Example text is pre-selected on first focus so typing replaces it at once.
   var edited = false;
   els.input.addEventListener('input', function () { edited = true; });
@@ -245,5 +420,6 @@
   tickClock();
   setInterval(tickClock, 1000);
   fetchTelemetry();
+  loadModels();
   timer = setInterval(fetchTelemetry, POLL_MS);
 })();

@@ -1,117 +1,147 @@
 # X Desktop
 
-Standalone desktop client for X (Twitter) built on Electron with isolated session architecture, hardware-accelerated local AI translation, network-level content filtering, and native desktop integration for Windows and Linux.
+A standalone X (Twitter) desktop client for Linux and Windows: an isolated profile, network-level
+feed filtering, and Arabic translation that runs on your own GPU.
+
+[![Release](https://img.shields.io/github/v/release/Rassmos999/x-desktop?sort=semver&color=b7825e&label=release)](https://github.com/Rassmos999/x-desktop/releases/latest)
+[![License](https://img.shields.io/github/license/Rassmos999/x-desktop?color=b7825e)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platforms-linux%20%7C%20windows-b7825e)](#installation)
+[![Electron](https://img.shields.io/badge/electron-41-b7825e)](https://www.electronjs.org/)
+
+[Landing page](https://rassmos999.github.io/x-desktop/) ·
+[Manual](https://rassmos999.github.io/x-desktop/manual/) ·
+[الدليل بالعربية](https://rassmos999.github.io/x-desktop/manual/ar/)
 
 ---
 
-## Overview
+## What it is
 
-X Desktop runs as a dedicated desktop process with zero credential leakage to your daily web browser instances. It pairs native desktop capabilities (such as Wayland tiling support on Linux and portable execution on Windows) with an in-process neural translation pipeline running locally on your GPU.
+X in a dedicated profile that shares nothing with your daily browser — no cookies, no cache, no
+credentials — with translation performed by a model loaded on your own graphics card.
 
-### Core Capabilities
+**Core capabilities**
 
-- **Isolated Profile Architecture:** Cookies, LocalStorage, and cache reside exclusively in dedicated application storage (`%APPDATA%\x-desktop` on Windows and `~/.config/x-desktop` on Linux).
-- **Dual-Engine Translation:**
-  - **Local Neural Engine:** Discrete GPU inference using quantized GGUF models (Gemma-4 and Qwen3-VL) with Vulkan acceleration, sustaining over 85 tokens per second with 12,288 context tokens.
-  - **Fast Fallback Engine:** Sub-80ms cloud translation for instantaneous reading without GPU utilization.
-- **Selection Translation & Inline Replacement:** Highlight any text on the timeline to translate it in an isolated floating tooltip, copy it, or replace the word inline while preserving sentence layout.
-- **Clean Timeline Filtering:** Automatic removal of promoted advertisements, boosted posts, tracking endpoints, and subscription promo banners without degrading media playback.
-- **Session Assistant (Google Sign-In Bridge):** Native bridge that routes Google OAuth verification to your system browser to satisfy Google security policies, then imports and synchronizes the session token.
-- **Media Controls & PiP:** Picture-in-Picture floating video window, media download capabilities, and MPRIS D-Bus integration on Linux.
+- **Isolated profile.** Cookies, storage and cache live under `~/.config/x-desktop` on Linux and
+  `%APPDATA%\x-desktop` on Windows, separate from every other browser on the machine.
+- **Timeline filtering.** Promoted posts, boosted entries and known advertising and analytics
+  endpoints are blocked at the network layer before they render.
+- **Two translation engines.** AI runs locally on the GPU; Fast is a cloud call. See the honest
+  comparison below.
+- **Selection and inline translation.** Highlight text in a post to translate it in a tooltip,
+  copy the result, or swap it inline and restore the original.
+- **Local engine dashboard.** Telemetry, a test console, and model switching on
+  `127.0.0.1:28492`.
+- **Google sign-in bridge.** Routes Google authentication to your system browser and imports the
+  resulting session token.
+- **Desktop integration.** Tray actions, MPRIS media controls on Linux, example Niri and Hyprland
+  tiling rules, and media download.
 
----
+## Translation, stated plainly
 
-## Distribution Packages
+| | AI engine | Fast engine |
+| :-- | :-- | :-- |
+| Runs on | Your GPU, served from `127.0.0.1:28491` | A cloud request to `translate.googleapis.com` |
+| Leaves your machine | Nothing | The text you translate |
+| Needs a model | Yes — one GGUF file | No |
 
-Automated release packages are generated across all target architectures:
+If the local model returns nothing usable, the client currently completes the request through the
+cloud path rather than failing. The dashboard tags every result with the engine that produced it,
+so treat the tag as the proof of which path ran, not the button you pressed.
 
-| Platform | Format | Package / Target |
-| :--- | :--- | :--- |
-| **Windows** | Portable Zip (`.zip`) | `x-desktop-windows-x64.zip` (Includes launcher and desktop shortcut installer) |
-| **Debian / Ubuntu** | Native Debian Package (`.deb`) | `x-desktop_1.0.1_amd64.deb` |
-| **Fedora / RHEL** | RPM Package (`.rpm`) | `x-desktop-1.0.1-1.x86_64.rpm` |
-| **Arch Linux** | Pacman Archive (`.pkg.tar.zst`) | `x-desktop-1.0.1-1-x86_64.pkg.tar.zst` |
+## Installation
 
-Download prebuilt releases directly from the [GitHub Releases page](https://github.com/Rassmos999/x-desktop/releases).
+| System | Package | Install |
+| :-- | :-- | :-- |
+| Debian, Ubuntu | `.deb` | `sudo apt install ./x-desktop_1.0.1_amd64.deb` |
+| Fedora, RHEL | `.rpm` | `sudo dnf install ./x-desktop-1.0.1-1.x86_64.rpm` |
+| Arch Linux | `.pkg.tar.zst` | `sudo pacman -U x-desktop-1.0.1-1-x86_64.pkg.tar.zst` |
+| Windows x64 | portable `.zip` | Extract and run `x-desktop.exe` |
 
----
+All four are attached to the [latest release](https://github.com/Rassmos999/x-desktop/releases/latest).
 
-## Local AI Model Deployment
+### From source
 
-X Desktop can execute local GGUF models directly on NVIDIA RTX GPUs via its built-in Vulkan runtime.
+Requires Node.js 20+, Python 3, `make`, and ImageMagick or `librsvg`.
 
-### Recommended Model Weights
-
-1. **Gemma 4 (E2B-it):** Recommended for technical, programming, and conversational Arabic translation.
-   - File: `gemma-4-E2B-it-Q4_K_M.gguf` (~2.9 GB)
-   - Quantization: Q4_K_M
-   - Context: 12,288 tokens
-2. **Qwen3-VL (2B-Instruct):** Recommended for OCR and vision translation.
-   - File: `Qwen3VL-2B-Instruct-Q4_K_M.gguf` (~1.03 GB)
-   - Projector: `mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf` (~425 MB)
-
-### Model Directory Structure
-
-Place model files in the standard operating system data directory:
-
-- **Linux:** `~/.local/share/x-desktop/models/`
-- **Windows:** `%USERPROFILE%\.local\share\x-desktop\models\`
-
-When present, the application automatically launches the local server with full layer offloading (`-ngl 99`), Flash Attention (`-fa on`), and 12K context.
-
----
-
-## Local Telemetry & Documentation
-
-The client embeds an operations telemetry interface and technical catalog:
-
-- **Telemetry Dashboard:** `http://localhost:28492` (Live GPU VRAM, temperature, measured generation speed, and KV-cache breakdown).
-- **Technical Catalog:** `http://localhost:28492/docs` (Detailed hardware requirements and runtime options).
-
----
-
-## Keyboard Shortcuts
-
-| Key Combination | Action | Scope |
-| :--- | :--- | :--- |
-| `Ctrl + Q` | Terminate Client & Purge VRAM | Kills all background model processes and frees GPU memory |
-| `Ctrl + Shift + D` | Open Telemetry Dashboard | Launches browser monitor on port 28492 |
-| `Ctrl + Wheel` | Dynamic Interface Zoom | Smooth renderer scaling |
-| `Ctrl + =` | Zoom In | Increments scale factor |
-| `Ctrl + -` | Zoom Out | Decrements scale factor |
-| `Ctrl + 0` | Reset Zoom | Resets scale factor to 100% |
-| `Ctrl + N` | Compose Post | Opens post creation modal |
-| `Ctrl + 1 .. 5` | Navigation Tabs | Home, Explore, Notifications, Messages, Bookmarks |
-| `Ctrl + Shift + P` | Toggle Picture-in-Picture | Detaches active video into an always-on-top window |
-
----
-
-## Building from Source
-
-### Prerequisites
-- Node.js (v20+)
-- Python 3 with ImageMagick or librsvg
-- Make
-
-### Build and Install
 ```bash
-# Clone the repository
 git clone https://github.com/Rassmos999/x-desktop.git
 cd x-desktop
-
-# Install dependencies and build assets
 npm install
 make icons
-
-# Install locally to ~/.local
-make install
-
-# Run the client
+make install      # ~/.local; use PREFIX=/usr with sudo for a system install
 x-desktop
 ```
 
----
+## Models
+
+The AI engine needs the llama.cpp runtime and at least one GGUF model. Both live outside the
+application directory so they survive updates.
+
+```bash
+./tools/setup-ai-engine.sh    # runtime + required model, about 3 GB
+```
+
+| File | Size | Purpose |
+| :-- | :-- | :-- |
+| `gemma-4-E2B-it-Q4_K_M.gguf` | 2.89 GB | Required, from [unsloth/gemma-4-E2B-it-GGUF](https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF) |
+| `Qwen3VL-2B-Instruct-Q4_K_M.gguf` | 1.03 GB | Optional vision model, from [Qwen/Qwen3-VL-2B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF) |
+| `mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf` | 425 MB | Optional projector the vision model requires |
+
+Locations: `~/.local/share/x-desktop/models/` on Linux,
+`%USERPROFILE%\.local\share\x-desktop\models\` on Windows. The active model is recorded in
+`config.json` in the folder above `models/`.
+
+Any GGUF text model in that folder appears in the dashboard and can be switched to there. A file
+whose name begins with `mmproj` is treated as a projector and never loaded as a model.
+
+## Keyboard shortcuts
+
+| Keys | Action |
+| :-- | :-- |
+| `Ctrl + Q` | Quit and release GPU memory |
+| `Ctrl + Shift + D` | Open the engine dashboard |
+| `Ctrl + 1..5` | Home, Explore, Notifications, Messages, Bookmarks |
+| `Ctrl + N` | Compose a post |
+| `Ctrl + =` / `Ctrl + -` / `Ctrl + 0` | Zoom in / out / reset |
+| `Ctrl + wheel` | Continuous zoom |
+| `Ctrl + Shift + I` | Developer tools |
+
+## Endpoints
+
+| Endpoint | Port | Purpose |
+| :-- | :-- | :-- |
+| `GET /api/telemetry` | 28492 | Engine state, model, VRAM, throughput, history |
+| `GET /api/models` | 28492 | Installed models, active model, vision availability |
+| `POST /api/models/active` | 28492 | Switch the active model and restart the engine |
+| `POST /api/models/reveal` | 28492 | Open the models folder |
+| `POST /api/translate` | 28492 | Translate text through either engine |
+| `POST /api/translate-image` | 28492 | Translate text found in an image |
+| `GET /health` | 28491 | Engine liveness |
+
+Everything binds to loopback only. The model endpoints change state, so they accept requests only
+from this machine's own dashboard origin.
+
+## Development
+
+```bash
+npm start          # run the client
+npm test           # contract tests
+make icons         # regenerate icon sizes
+make package       # build all distribution packages
+```
+
+The public site and manual are hand-authored under `docs/` and published by GitHub Pages from
+`main` / `docs`. The manual is also served inside the application at
+`http://127.0.0.1:28492/docs`.
+
+## Requirements
+
+Linux x64 or Windows x64. Local translation expects a discrete GPU reachable through Vulkan; an
+NVIDIA RTX 4060 is the configuration the models were measured on. Without a compatible GPU the
+client still browses and the Fast engine still translates. Image translation requires both a
+vision-capable model and its projector; when either is missing the client does not offer it.
 
 ## License
 
-MIT License. Copyright (c) 2026.
+MIT — see [LICENSE](LICENSE).
+

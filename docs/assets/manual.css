@@ -1,0 +1,134 @@
+/* Manual (Read) in the dark cinematic editorial world.
+
+   Reading is the task, so the structure serves comprehension first: a sticky
+   contents rail that becomes a disclosure on small screens, a single text
+   column held to a comfortable measure, and tabular data kept in tables.
+   The world's voice carries into the reading surface — display serif headings
+   at a restrained size, mono labels and numerals, hairline rules instead of
+   boxes — so the manual belongs to the same product as the landing page. */
+
+.layout {
+  display: grid; grid-template-columns: 236px minmax(0, 1fr);
+  gap: 0; max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter);
+  align-items: start;
+}
+
+/* Contents */
+.toc { position: sticky; top: 74px; padding: 52px 40px 40px 0; border-inline-end: 1px solid var(--line); }
+.toc h2 { font-family: var(--mono); font-size: 10px; letter-spacing: 1.7px; text-transform: uppercase; color: var(--faint); margin-bottom: 16px; }
+.toc ol { list-style: none; display: flex; flex-direction: column; }
+.toc li { border-bottom: 1px solid var(--line); }
+.toc li:first-child { border-top: 1px solid var(--line); }
+.toc a {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 11px 0; color: var(--muted); font-size: 13.5px;
+  border-inline-start: 2px solid transparent; padding-inline-start: 12px;
+  margin-inline-start: -14px;
+}
+.toc a:hover { color: var(--text); text-decoration: none; }
+.toc a[aria-current="true"] { color: var(--text); border-inline-start-color: var(--copper); }
+.toc a .i { font-family: var(--mono); font-size: 10px; color: var(--faint); flex: none; }
+.toc a[aria-current="true"] .i { color: var(--copper); }
+[dir="rtl"] .toc h2 { letter-spacing: 0; text-transform: none; font-family: var(--sans); }
+
+.toc-toggle { display: none; }
+
+/* Document column */
+.doc { min-width: 0; padding: 52px 0 0 48px; }
+[dir="rtl"] .doc { padding: 52px 48px 0 0; }
+
+.doc h1 { font-size: clamp(34px, 4.6vw, 56px); line-height: 1.04; letter-spacing: -0.035em; text-wrap: balance; }
+.doc .intro { margin-top: 20px; font-size: 15.5px; color: var(--muted); max-width: 62ch; line-height: 1.85; }
+.doc > .marker { margin-top: 44px; }
+
+.doc section { padding-top: 66px; scroll-margin-top: 74px; }
+.doc section > .marker { margin-bottom: 20px; }
+.doc section > .marker .label { color: var(--faint); }
+.doc h2 {
+  font-size: clamp(25px, 2.9vw, 38px); line-height: 1.12; letter-spacing: -0.028em;
+  padding-bottom: 16px; border-bottom: 1px solid var(--line); text-wrap: balance;
+}
+.doc h3 { font-family: var(--sans); font-size: 15px; font-weight: 600; margin-top: 34px; letter-spacing: 0; }
+.doc p { margin-top: 15px; max-width: 66ch; }
+.doc p, .doc li { font-size: 14.5px; line-height: 1.85; }
+.doc ul, .doc ol { margin-top: 14px; padding-inline-start: 20px; max-width: 66ch; display: flex; flex-direction: column; gap: 8px; }
+.doc li::marker { color: var(--copper); }
+.doc li strong { color: #fff; font-weight: 600; }
+
+.doc code {
+  font-family: var(--mono); font-size: 12.5px;
+  background: var(--well); border: 1px solid var(--line);
+  padding: 1px 6px; color: var(--text); overflow-wrap: anywhere;
+}
+
+/* Inline code is LTR content even on an RTL page, and must never be broken
+   across lines mid-token. */
+.doc code, .tbl code { direction: ltr; unicode-bidi: isolate; display: inline-block; max-width: 100%; }
+
+/* Code block: one rule above, a mono caption, and a copy control. */
+.code { margin-top: 16px; border: 1px solid var(--line); background: var(--well); }
+.code-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 11px 16px; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint);
+}
+.code pre { padding: 16px; overflow-x: auto; }
+.code pre { direction: ltr; text-align: left; }
+.code pre code { background: none; border: none; padding: 0; font-size: 12.5px; line-height: 1.8; color: #e2d9c9; }
+.copy {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line-strong); padding: 7px 12px; min-height: 32px; cursor: pointer;
+}
+.copy:hover { color: var(--text); border-color: var(--text); }
+[dir="rtl"] .code-head { letter-spacing: 0; text-transform: none; font-family: var(--sans); }
+[dir="rtl"] .copy { letter-spacing: 0; text-transform: none; font-family: var(--sans); }
+
+/* Tables */
+.tbl { margin-top: 18px; border-top: 1px solid var(--line); overflow-x: auto; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 480px; }
+.tbl th, .tbl td { padding: 13px 18px 13px 0; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th + th, .tbl td + td { padding-inline-start: 18px; }
+.tbl thead th { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500; color: var(--faint); }
+.tbl td:first-child, .tbl th:first-child { color: var(--muted); }
+[dir="rtl"] .tbl thead th { letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: 12px; }
+
+kbd {
+  display: inline-block; font-family: var(--mono); font-size: 11.5px;
+  background: var(--well); border: 1px solid var(--line-strong);
+  padding: 3px 8px; color: var(--text); white-space: nowrap;
+}
+
+/* Notes: severity is stated in words as well as colour. */
+.note { margin-top: 18px; border: 1px solid var(--line); border-inline-start: 2px solid var(--faint); background: var(--panel); padding: 16px 20px; }
+.note .tag { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 7px; }
+.note p { margin-top: 0; font-size: 13.5px; max-width: 64ch; }
+.note[data-tone="ok"] { border-inline-start-color: var(--ok); } .note[data-tone="ok"] .tag { color: var(--ok-ink); }
+.note[data-tone="warn"] { border-inline-start-color: var(--warn); } .note[data-tone="warn"] .tag { color: var(--warn-ink); }
+.note[data-tone="bad"] { border-inline-start-color: var(--bad); } .note[data-tone="bad"] .tag { color: var(--bad-ink); }
+.note[data-tone="info"] { border-inline-start-color: var(--copper); } .note[data-tone="info"] .tag { color: var(--copper-ink); }
+[dir="rtl"] .note .tag { letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: 12px; }
+
+@media (max-width: 980px) {
+  .layout { grid-template-columns: minmax(0, 1fr); padding-top: 8px; }
+  .toc { position: static; padding: 28px 0 0; border-inline-end: none; }
+  .toc-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    background: transparent; color: var(--text);
+    border: 1px solid var(--line-strong); padding: 14px 16px; min-height: 48px; cursor: pointer;
+  }
+  .toc h2 { display: none; }
+  .toc ol { margin-top: 12px; }
+  .toc:not([data-open="true"]) ol { display: none; }
+  .doc, [dir="rtl"] .doc { padding: 34px 0 0; }
+  .doc section { padding-top: 44px; scroll-margin-top: 64px; }
+}
+
+@media print {
+  .top, .toc, .foot, .copy { display: none; }
+  .layout { display: block; padding: 0; }
+  .doc { padding: 0; }
+  body { background: #fff; color: #000; }
+  .doc h2, .doc h3 { color: #000; }
+}

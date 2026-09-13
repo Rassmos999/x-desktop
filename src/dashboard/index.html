@@ -97,6 +97,37 @@
         </div>
         <div class="feedwrap" id="feedList" role="log" aria-live="polite" aria-label="سجل الترجمات"></div>
       </section>
+
+      <section class="panel" aria-labelledby="modelsTitle">
+        <div class="chead">
+          <h2 id="modelsTitle">الموديلات</h2>
+          <span class="sub mono ltr" id="modelsCount">—</span>
+        </div>
+
+        <div class="mstate" data-tone="idle" id="modelsState" role="status">
+          <span class="mstate-glyph" aria-hidden="true"></span>
+          <span id="modelsStateText">جارٍ فحص مجلد الموديلات…</span>
+        </div>
+
+        <div class="mrow">
+          <label class="mlabel" for="modelSelect">الموديل النشط</label>
+          <select id="modelSelect" class="select ltr" disabled>
+            <option value="">—</option>
+          </select>
+          <p class="mhint" id="modelHint">تُقرأ الموديلات من مجلد التخزين المحلي.</p>
+        </div>
+
+        <div class="mrw">
+          <div class="mlabel">مجلد الموديلات</div>
+          <div class="mval mono ltr" id="modelsDir">—</div>
+        </div>
+
+        <div class="btnrow" style="margin-top:16px;">
+          <button id="btnSwitchModel" class="btn btn-primary" type="button" disabled>تبديل الموديل</button>
+          <button id="btnRevealModels" class="btn btn-ghost" type="button">فتح المجلد</button>
+          <span id="modelLatency" class="latency mono ltr"></span>
+        </div>
+      </section>
     </div>
   </div>
 

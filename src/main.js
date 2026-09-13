@@ -74,7 +74,9 @@ ipcMain.handle('get-ai-status', () => {
   return {
     isReady: aiEngine.isReady,
     hasModel: aiEngine.hasModel(),
-    hasVision: aiEngine.hasVision()
+    hasVision: aiEngine.hasVision(),
+    activeModel: aiEngine.getActiveModel(),
+    engineState: aiEngine.getEngineState()
   };
 });
 

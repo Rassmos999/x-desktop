@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14110f">
+<title>X Desktop — عميل X مستقل بترجمة تعمل على كرت الرسوم لديك</title>
+<meta name="description" content="عميل سطح مكتب مستقل لـ X (تويتر) على لينكس وويندوز: ملف تعريف معزول، وفلترة للخط الزمني على مستوى الشبكة، وترجمة عربية تعمل على كرت الرسوم لديك.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Amiri:wght@400;700&display=swap">
+<link rel="stylesheet" href="../assets/tokens.css">
+<link rel="stylesheet" href="../assets/landing.css">
+<link rel="alternate" hreflang="en" href="../">
+</head>
+<body>
+
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+
+<header class="top">
+  <div class="top-in">
+    <a class="mark" href="./">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <b>X Desktop</b>
+    </a>
+    <span class="spacer"></span>
+    <nav aria-label="التنقل الأساسي">
+      <a href="#download">التنزيل</a>
+      <a href="#engines">الترجمة</a>
+      <a href="manual/">الدليل</a>
+      <a class="lang" href="../" hreflang="en" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- الفتحة: الادّعاء بحجم العرض فوق أرضية دافئة، ومواصفات المنتج الحقيقية
+       على الحافة السفلى. -->
+  <section class="hero">
+    <div class="hero-ground" aria-hidden="true"></div>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="hero-grid-lines" aria-hidden="true"></div>
+
+    <div class="hero-top">
+      <span class="label">عميل سطح مكتب مستقل · لينكس وويندوز</span>
+      <span class="label ltr">v1.0.1</span>
+    </div>
+
+    <div class="hero-body">
+      <h1>ترجمة لا تغادر <em>كرت الرسوم لديك.</em></h1>
+    </div>
+
+    <dl class="hero-specs">
+      <div class="spec">
+        <dt>المحرك</dt>
+        <dd>Gemma-4-E2B<small>بقياس <span class="ltr">Q4_K_M</span>، بتسريع Vulkan، ويُقدَّم من العنوان المحلي</small></dd>
+      </div>
+      <div class="spec">
+        <dt>نافذة السياق</dt>
+        <dd><span class="ltr">12,288</span><small>رمزاً، ويُحمَّل ملف واحد في كل مرة</small></dd>
+      </div>
+      <div class="spec">
+        <dt>ملف التعريف</dt>
+        <dd>معزول<small>ملفات ارتباطه وتخزينه وذاكرته المؤقتة منفصلة عن متصفحك</small></dd>
+      </div>
+      <div class="spec">
+        <dt>المنصات</dt>
+        <dd><span class="ltr">4</span><small>دبيان، فيدورا، آرتش، ويندوز <span class="ltr">x64</span></small></dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- التنزيل -->
+  <section class="get" id="download">
+    <div class="get-lead">
+      <div class="marker" style="margin-bottom:22px;"><span class="num ltr">01</span><span class="rule"></span><span class="label">التنزيل</span></div>
+      <h2>ثبّت العميل، ثم أعطه موديلاً.</h2>
+      <p>يتصفح العميل بلا أي موديل أصلاً. أما الترجمة فتحتاج ملفاً واحداً يُنزَّل مرة واحدة.</p>
+      <div class="get-actions">
+        <a class="btn btn-primary" href="manual/#install">خطوات التثبيت</a>
+        <a class="btn" href="https://github.com/Rassmos999/x-desktop">الشيفرة المصدرية</a>
+      </div>
+    </div>
+    <div class="get-list">
+      <p class="label" id="dlNote" style="padding-bottom:8px;" data-detected="تم التعرّف على منصتك · كل النسخ أدناه تعمل">أحدث إصدار · كل النسخ مرفقة به</p>
+      <a class="dl" data-platform="windows" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop-windows-x64.zip">
+        <span class="n ltr">01</span>
+        <span class="nm">ويندوز <span class="ltr">x64</span><small class="ltr">portable zip · x-desktop.exe</small></span>
+        <span class="sz ltr">138 MB</span>
+      </a>
+      <a class="dl" data-platform="debian" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop_1.0.1_amd64.deb">
+        <span class="n ltr">02</span>
+        <span class="nm">دبيان · أوبونتو<small class="ltr">x-desktop_1.0.1_amd64.deb</small></span>
+        <span class="sz ltr" data-prefix="موصى به · ">81 MB</span>
+      </a>
+      <a class="dl" data-platform="fedora" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop-1.0.1-1.x86_64.rpm">
+        <span class="n ltr">03</span>
+        <span class="nm">فيدورا · <span class="ltr">RHEL</span><small class="ltr">x-desktop-1.0.1-1.x86_64.rpm</small></span>
+        <span class="sz ltr">106 MB</span>
+      </a>
+      <a class="dl" data-platform="arch" href="https://github.com/Rassmos999/x-desktop/releases/latest/download/x-desktop-1.0.1-1-x86_64.pkg.tar.zst">
+        <span class="n ltr">04</span>
+        <span class="nm">آرتش لينكس<small class="ltr">x-desktop-1.0.1-1-x86_64.pkg.tar.zst</small></span>
+        <span class="sz ltr">100 MB</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="wrap">
+
+    <!-- المحرّكان -->
+    <section class="band" id="engines">
+      <div class="band-in">
+        <div class="band-head">
+          <div class="marker" style="margin-bottom:22px;"><span class="num ltr">02</span><span class="rule"></span><span class="label">الترجمة</span></div>
+          <h2>محرّكان، والفرق بينهما هو <em>إلى أين يذهب نصّك.</em></h2>
+        </div>
+        <div class="band-body">
+          <p>
+            مسار واحد يعمل بالكامل على عتادك، والآخر طلب سحابي. كلاهما مفيد، والعميل يسمّي أيّهما
+            أجاب بدل أن يتركك تخمّن.
+          </p>
+
+          <div class="compare">
+            <div class="compare-row compare-head">
+              <div></div><div>محرك الذكاء</div><div>المحرك السريع</div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">مكان التنفيذ</div>
+              <div><span class="chip" data-engine="ai">كرت الرسوم لديك</span></div>
+              <div><span class="chip" data-engine="cloud">طلب سحابي</span></div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">ما يخرج من جهازك</div>
+              <div>لا شيء. الاستدلال يُقدَّم من <span class="ltr mono">127.0.0.1</span>.</div>
+              <div>النص الذي تترجمه يُرسل إلى <span class="ltr mono">translate.googleapis.com</span>.</div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">يحتاج موديلاً</div>
+              <div>نعم — ملف <span class="ltr">GGUF</span> واحد يُحمَّل على كرت الرسوم.</div>
+              <div>لا. يعمل قبل أن تنزّل أي شيء.</div>
+            </div>
+            <div class="compare-row">
+              <div class="aspect">عندما لا يُرجع الموديل المحلي شيئاً</div>
+              <div class="wide">يكمل العميل الطلب حالياً عبر المسار السحابي بدل أن يفشل. وتضع اللوحة وسماً على كل نتيجة يبيّن المحرك الذي أنتجها، ويشرح الدليل كيف تقرأ ذلك الوسم — فاعتبر الوسم هو الدليل، لا الزر الذي ضغطت عليه.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- فهرس القدرات -->
+    <section class="band" id="capabilities">
+      <div class="band-in">
+        <div class="band-head">
+          <div class="marker" style="margin-bottom:22px;"><span class="num ltr">03</span><span class="rule"></span><span class="label">القدرات</span></div>
+          <h2>ما هو <em>مُنفَّذ فعلاً.</em></h2>
+        </div>
+        <div class="band-body">
+          <p>كل بند أدناه موجود في الشيفرة المنشورة ومشروح في الدليل. لا شيء هنا مخطط له، ولا يُعلن عن شيء غير مُصدَّر.</p>
+
+          <div class="index-cap">
+            <div class="cap">
+              <span class="n ltr">01</span>
+              <div>
+                <h3>ملف تعريف معزول</h3>
+                <p>ملفات الارتباط والتخزين والذاكرة المؤقتة تقيم في <span class="ltr mono">~/.config/x-desktop</span> على لينكس و<span class="ltr mono">%APPDATA%\x-desktop</span> على ويندوز — منفصلة عن كل متصفح آخر على الجهاز.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n ltr">02</span>
+              <div>
+                <h3>فلترة الخط الزمني</h3>
+                <p>تُحجب المنشورات المروّجة والمنشورات المعزَّزة ونقاط الإعلانات والتحليلات المعروفة على مستوى الشبكة قبل عرضها، فلا يتأثر الوسائط في الخط الزمني نفسه.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n ltr">03</span>
+              <div>
+                <h3>الترجمة بالتحديد وفي المكان</h3>
+                <p>ظلّل نصاً داخل منشور لترجمته في تلميح عائم، أو انسخ الناتج، أو استبدله في مكانه ثم أعد الأصل. ويُعزل النص اللاتيني داخل العربية ليظل المحتوى المختلط مقروءاً.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n ltr">04</span>
+              <div>
+                <h3>لوحة محرك محلية مع تبديل الموديل</h3>
+                <p>لوحة قياسات على <span class="ltr mono">127.0.0.1:28492</span> تعرض حالة المحرك والموديل المحمَّل وذاكرة كرت الرسوم والحرارة والسرعة المقيسة، وتشغّل ترجمة اختبارية، وتبدّل بين الموديلات في مجلدك.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n ltr">05</span>
+              <div>
+                <h3>جسر الدخول عبر Google</h3>
+                <p>يرفض Google المصادقة داخل العروض المضمّنة. فيوجّه العميل هذه الخطوة إلى متصفح النظام ثم يستورد رمز الجلسة الناتج عبر مساعد الجلسة.</p>
+              </div>
+            </div>
+            <div class="cap">
+              <span class="n ltr">06</span>
+              <div>
+                <h3>تكامل سطح المكتب</h3>
+                <p>أيقونة في شريط النظام بإجراءات سريعة، وتحكم وسائط <span class="ltr">MPRIS</span> على لينكس، وقواعد تجانب نموذجية لواجهتي Niri وHyprland، وتنزيل للوسائط إلى مجلد التنزيلات.</p>
+              </div>
+            </div>
+          </div>
+
+          <figure class="shot">
+            <img src="../assets/shots/dashboard.png" width="1440" height="1350" alt="لوحة محرك X Desktop: شريط حالة يعرض حالة المحرك وذاكرة كرت الرسوم والحرارة والسرعة، ومنصة اختبار مرقّمة، وشريط تخصيص نافذة السياق، وحالات المسارات، وسجل عمليات، ولوحة موديلات تسرد الموديلات المثبَّتة مع زر تبديل." loading="lazy" decoding="async">
+            <figcaption>لوحة المحرك · قيم حيّة تُقرأ من المحرك المحلي على المنفذ 28491</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- المتطلبات -->
+    <section class="band" id="requirements">
+      <div class="band-in">
+        <div class="band-head">
+          <div class="marker" style="margin-bottom:22px;"><span class="num ltr">04</span><span class="rule"></span><span class="label">المتطلبات</span></div>
+          <h2>ما يطلبه من <em>جهازك.</em></h2>
+        </div>
+        <div class="band-body">
+          <p>
+            لينكس <span class="ltr">x64</span> أو ويندوز <span class="ltr">x64</span>. وتتوقع الترجمة المحلية كرت
+            رسوم منفصلاً يمكن الوصول إليه عبر Vulkan؛ وكرت NVIDIA RTX 4060 هو التهيئة التي قيست
+            عليها الموديلات. والموديل تنزيل بحجم 2.89 غيغابايت ويشغل نحواً من ذلك من ذاكرة كرت الرسوم بعد تحميله.
+          </p>
+          <p>
+            وبدون كرت متوافق يظل العميل يتصفح ويظل المحرك السريع يترجم — لا يجد محرك الذكاء حينها ما
+            يحمّله، ويقول ذلك بدل أن يفشل صامتاً.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="close">
+      <div>
+        <div class="marker" style="margin-bottom:22px;"><span class="num ltr">05</span><span class="rule"></span><span class="label">الدليل</span></div>
+        <h2>الدليل يغطي الباقي.</h2>
+        <p>
+          التثبيت على كل منصة، وملفات الموديلات بالضبط وأماكنها، وكيف تضيف موديلاً وتبدّله، وكل
+          اختصارات لوحة المفاتيح، وأين تقيم بياناتك، وما يجب فحصه عندما لا يكون المحرك جاهزاً.
+        </p>
+      </div>
+      <div class="close-actions">
+        <a class="btn btn-primary" href="manual/">اقرأ الدليل</a>
+        <a class="btn" href="https://github.com/Rassmos999/x-desktop/releases/latest">كل الإصدارات</a>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span class="label">X Desktop</span>
+    <span class="label ltr">MIT License</span>
+    <span class="spacer" style="margin-inline-start:auto;"></span>
+    <a href="manual/">الدليل</a>
+    <a href="https://github.com/Rassmos999/x-desktop">GitHub</a>
+    <a href="../" hreflang="en" lang="en">English</a>
+  </div>
+</footer>
+
+<script src="../assets/landing.js" defer></script>
+</body>
+</html>

@@ -146,7 +146,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: release-assets/*
-          name: "X Desktop v${{ github.ref_name }}"
+          # The tag already carries its "v", so prefixing another produced "vv1.0.1".
+          name: "X Desktop ${{ github.ref_name }}"
           generate_release_notes: true
           body: |
             ## X Desktop Client Release
@@ -158,3 +159,7 @@ jobs:
             - **Debian / Ubuntu**: Native installation package (.deb).
             - **Fedora / RHEL**: Native RPM package (.rpm).
             - **Arch Linux**: Pacman package (.pkg.tar.zst).
+
+            Local translation runs on your own GPU. The Fast engine is a cloud call, and the
+            dashboard tags every result with the engine that answered it. Model setup and
+            troubleshooting are covered in the [manual](https://rassmos999.github.io/x-desktop/manual/).

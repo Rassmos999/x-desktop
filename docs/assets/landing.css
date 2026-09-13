@@ -1,0 +1,190 @@
+/* Landing page (Persuade) in the adopted dark cinematic editorial world.
+
+   Composition: the opening viewport is a full-height statement — the product's
+   claim set enormous in the display serif over a warm photographic ground, with
+   a mono specification strip along the bottom edge, exactly as the reviewed
+   direction does. Every later section descends from that: a two-column
+   introduction, an editorial comparison, a numbered capability index, and a
+   quiet close. Download is a single deliberate action, not a card grid. */
+
+.hero {
+  position: relative;
+  min-height: min(88svh, 820px);
+  display: flex;
+  flex-direction: column;
+  background: #2a211a;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Ground: a warm near-black field with the copper glow the world's palette
+   promises. No stock photograph is used, so no rights or network dependency
+   ride on the page. */
+.hero-ground {
+  position: absolute; inset: 0; z-index: -3;
+  background:
+    radial-gradient(120% 90% at 74% 8%, rgba(183, 130, 94, 0.42), transparent 58%),
+    radial-gradient(70% 60% at 12% 92%, rgba(120, 84, 60, 0.3), transparent 62%),
+    linear-gradient(178deg, #241c16, #140f0c 62%, #100d0b);
+}
+
+.hero-shade {
+  position: absolute; inset: 0; z-index: -2;
+  background: linear-gradient(180deg, rgba(20, 16, 13, 0.52), transparent 34%, rgba(20, 16, 13, 0.78) 100%);
+}
+
+/* Hairline graph-paper grid: the world's editorial armature, held far below
+   the type so it reads as structure rather than decoration. */
+.hero-grid-lines {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(232, 222, 205, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(232, 222, 205, 0.055) 1px, transparent 1px);
+  background-size: 148px 148px;
+  mask-image: linear-gradient(180deg, transparent, #000 22%, #000 74%, transparent);
+}
+
+.hero-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 30px;
+  padding: 30px var(--gutter) 0;
+}
+.hero-top .label { color: var(--text); }
+
+.hero-body {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  padding: 40px var(--gutter) 24px;
+  min-width: 0;
+}
+
+.hero h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(40px, 7.6vw, 126px);
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+  max-width: 15ch;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+.hero h1 em { font-style: italic; color: var(--copper-ink); }
+
+.hero-side {
+  /* Physical offsets on purpose: this element's own writing-mode is vertical,
+     so inset-inline-* would resolve against its rotated axes, not the page's. */
+  position: absolute; right: 18px; top: 46%;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--muted); writing-mode: vertical-rl;
+}
+[dir="rtl"] .hero-side { right: auto; left: 18px; }
+
+/* The specification strip: the product's real numbers along the bottom edge,
+   in the mono voice. These are the values the manual documents. */
+.hero-specs {
+  display: flex; align-items: stretch; gap: 0;
+  border-top: 1px solid var(--line-strong);
+  margin: 0 var(--gutter);
+}
+.spec { padding: 22px 26px 24px 0; flex: 1; min-width: 0; }
+.spec + .spec { padding-inline-start: 26px; border-inline-start: 1px solid var(--line); }
+.spec dt { font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); }
+.spec dd { margin-top: 8px; font-family: var(--display); font-size: 21px; line-height: 1.2; }
+.spec dd small { display: block; font-family: var(--sans); font-size: 12px; color: var(--muted); margin-top: 5px; line-height: 1.6; }
+[dir="rtl"] .spec dt { letter-spacing: 0; text-transform: none; font-family: var(--sans); }
+
+/* Download: one deliberate action beside the platform list. */
+.get {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 0; border-bottom: 1px solid var(--line);
+}
+.get-lead { padding: 46px 0; padding-inline-start: var(--gutter); border-inline-end: 1px solid var(--line); }
+.get-lead h2 { font-size: clamp(26px, 2.6vw, 36px); line-height: 1.12; letter-spacing: -0.025em; max-width: 20ch; }
+.get-lead p { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 44ch; }
+.get-actions { margin-top: 26px; display: flex; flex-direction: column; gap: 10px; max-width: 320px; }
+.get-list { padding: 46px 0; padding-inline-end: var(--gutter); display: flex; flex-direction: column; }
+.get-list > .label { padding-bottom: 16px; }
+
+/* The marker sits in the lead column, so its rule must not cross into the list
+   column beside it, and its label must not run into a neighbour. */
+.get-lead .marker { flex-wrap: wrap; }
+/* A short rule here, not a full-width leader: a rule that stretches to the
+   column edge would sit flush against the next column's own heading. */
+.get-lead .marker .rule { flex: 0 0 34px; }
+
+.dl { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: baseline; gap: 16px; padding: 15px 0; border-bottom: 1px solid var(--line); color: var(--text); }
+.dl:hover { color: var(--copper-ink); text-decoration: none; }
+.dl .n { font-family: var(--mono); font-size: 10px; color: var(--faint); }
+.dl .nm { font-size: 15px; }
+.dl .nm small { display: block; font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 5px; letter-spacing: 1px; }
+.dl .sz { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.dl[data-primary="true"] .sz { color: var(--ok-ink); }
+
+/* Sections: asymmetric two-column introductions, the world's signature move. */
+.band { padding: 96px 0 0; border-top: 1px solid var(--line); margin-top: 96px; }
+.band-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.02fr); gap: 48px; }
+.band-head { align-self: start; padding-top: 10px; }
+.band-head h2 { font-size: clamp(30px, 4.1vw, 60px); line-height: 1.06; letter-spacing: -0.032em; text-wrap: balance; }
+.band-head h2 em { font-style: italic; color: var(--copper-ink); }
+.band-body > p { font-size: 15px; color: var(--muted); max-width: 62ch; }
+.band-body > p + p { margin-top: 14px; }
+
+@media (max-width: 900px) {
+  .band-in { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .get { grid-template-columns: minmax(0, 1fr); }
+  .get-lead { padding: 38px var(--gutter) 30px; border-inline-end: none; border-bottom: 1px solid var(--line); }
+  .get-list { padding: 8px var(--gutter) 38px; }
+  .hero-specs { flex-wrap: wrap; }
+  .spec { flex: 1 1 46%; padding: 18px 18px 18px 0; }
+  .spec + .spec { padding-inline-start: 18px; }
+  .hero-side { display: none; }
+  .band { padding-top: 58px; margin-top: 58px; }
+}
+
+@media (max-width: 560px) {
+  .spec { flex: 1 1 100%; border-inline-start: none !important; padding-inline-start: 0 !important; border-top: 1px solid var(--line); }
+  .spec:first-child { border-top: none; }
+}
+
+/* Engine comparison: an editorial table, not a card set. */
+.compare { margin-top: 34px; border-top: 1px solid var(--line); }
+.compare-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.4fr); gap: 0; border-bottom: 1px solid var(--line); }
+.compare-row > div { padding: 18px 20px 18px 0; font-size: 14px; }
+.compare-row > div + div { padding-inline-start: 20px; border-inline-start: 1px solid var(--line); }
+.compare-head > div { font-family: var(--mono); font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--faint); }
+.compare-row .aspect { color: var(--muted); font-size: 13px; }
+.compare-row .wide { grid-column: 2 / -1; }
+[dir="rtl"] .compare-head > div { letter-spacing: 0; text-transform: none; font-family: var(--sans); }
+
+.chip { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+.chip::before { content: ""; width: 7px; height: 7px; background: currentColor; flex: none; }
+.chip[data-engine="ai"] { color: var(--copper-ink); }
+.chip[data-engine="cloud"] { color: var(--muted); }
+[dir="rtl"] .chip { letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: 12px; }
+
+/* Capability index: a numbered list, one line each, with the rule carrying the
+   eye. Dense by design — this is the reference section, read not skimmed. */
+.index-cap { margin-top: 34px; border-top: 1px solid var(--line); }
+.cap { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 24px; padding: 26px 0; border-bottom: 1px solid var(--line); }
+.cap .n { font-family: var(--mono); font-size: 11px; color: var(--copper); padding-top: 6px; }
+.cap h3 { font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.cap p { margin-top: 8px; font-size: 14px; color: var(--muted); max-width: 74ch; }
+
+/* Screenshot: framed by one rule, captioned in mono. */
+.shot { margin-top: 34px; border: 1px solid var(--line); background: var(--well); }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { padding: 14px 18px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); }
+[dir="rtl"] .shot figcaption { letter-spacing: 0; text-transform: none; font-family: var(--sans); font-size: 12px; }
+
+/* Close: a quiet, wide, left-anchored invitation. */
+.close { margin-top: 96px; border-top: 1px solid var(--line); padding-top: 64px; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 48px; align-items: end; }
+.close h2 { font-size: clamp(28px, 3.6vw, 52px); line-height: 1.06; letter-spacing: -0.03em; }
+.close p { margin-top: 16px; font-size: 15px; color: var(--muted); max-width: 52ch; }
+.close-actions { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 900px) {
+  .close { grid-template-columns: minmax(0, 1fr); gap: 26px; margin-top: 58px; padding-top: 40px; }
+  .compare-row { grid-template-columns: minmax(0, 1fr); }
+  .compare-row > div + div { padding-inline-start: 0; border-inline-start: none; }
+  .compare-row > div { padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .compare-row > div:last-child { border-bottom: none; }
+  .compare-row .wide { grid-column: auto; }
+  .cap { grid-template-columns: 34px minmax(0, 1fr); gap: 14px; padding: 20px 0; }
+}

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-label-copy="نسخ" data-label-copy-aria="انسخ هذا الأمر" data-label-copied="تم النسخ" data-label-copy-manual="اضغط Ctrl+C">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14110f">
+<title>دليل X Desktop — التثبيت والموديلات والاختصارات وحلّ المشكلات</title>
+<meta name="description" content="الدليل الكامل لـ X Desktop: التثبيت على لينكس وويندوز، وإعداد الموديلات وتبديلها، ومسارات الترجمة، واختصارات لوحة المفاتيح، وأماكن البيانات، وحلّ المشكلات.">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Amiri:wght@400;700&display=swap">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="../../assets/manual.css">
+<link rel="alternate" hreflang="en" href="../">
+</head>
+<body>
+
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+
+<header class="top">
+  <div class="top-in">
+    <a class="mark" href="../../">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <b>X Desktop</b>
+    </a>
+    <span class="spacer"></span>
+    <nav aria-label="التنقل الأساسي">
+      <a href="../../">نظرة عامة</a>
+      <a href="#troubleshooting">حلّ المشكلات</a>
+      <a href="https://github.com/Rassmos999/x-desktop">GitHub</a>
+      <a class="lang" href="../" hreflang="en" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+
+  <nav class="toc" aria-label="محتويات الدليل">
+    <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc-list">
+      <span>المحتويات</span>
+      <span aria-hidden="true">▾</span>
+    </button>
+    <h2>المحتويات</h2>
+    <ol id="toc-list">
+      <li><a href="#install"><span class="i ltr">01</span>التثبيت</a></li>
+      <li><a href="#first-run"><span class="i ltr">02</span>أول تشغيل والدخول</a></li>
+      <li><a href="#models"><span class="i ltr">03</span>الموديلات</a></li>
+      <li><a href="#dashboard"><span class="i ltr">04</span>اللوحة</a></li>
+      <li><a href="#translation"><span class="i ltr">05</span>الترجمة</a></li>
+      <li><a href="#filtering"><span class="i ltr">06</span>فلترة الخط الزمني</a></li>
+      <li><a href="#shortcuts"><span class="i ltr">07</span>اختصارات لوحة المفاتيح</a></li>
+      <li><a href="#data"><span class="i ltr">08</span>البيانات والإزالة</a></li>
+      <li><a href="#troubleshooting"><span class="i ltr">09</span>حلّ المشكلات</a></li>
+      <li><a href="#advanced"><span class="i ltr">10</span>مرجع متقدّم</a></li>
+      <li><a href="#sources"><span class="i ltr">11</span>المصادر</a></li>
+    </ol>
+  </nav>
+
+  <main class="doc" id="main">
+    <h1>دليل X Desktop</h1>
+    <p class="intro">
+      كل ما تحتاجه لتثبيت العميل، وإعطائه موديلاً، وترجمة المنشورات، والتعافي عندما لا يكون شيء ما
+      جاهزاً. الأوامر جاهزة للنسخ، والمسارات دقيقة، وكل قدرة موصوفة هنا مُنفَّذة في الشيفرة المنشورة.
+    </p>
+
+    <!-- 01 -->
+    <section id="install">
+      <p class="marker"><span class="num ltr">01</span><span class="label">التثبيت</span></p>
+      <h2>التثبيت</h2>
+      <p>
+        اختر حزمة نظامك. كل حزمة تثبّت التطبيق ومدخل سطح المكتب ومجموعة الأيقونات ومشغّل
+        <code>x-desktop</code> على <code>PATH</code>. ولا تثبّت أيٌّ منها موديلاً؛ فتلك خطوة منفصلة مشروحة في
+        <a href="#models">الموديلات</a>.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">النظام</th><th scope="col">الحزمة</th><th scope="col">أمر التثبيت</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>دبيان، أوبونتو</td>
+              <td><code>.deb</code></td>
+              <td><code>sudo apt install ./x-desktop_1.0.1_amd64.deb</code></td>
+            </tr>
+            <tr>
+              <td>فيدورا، RHEL</td>
+              <td><code>.rpm</code></td>
+              <td><code>sudo dnf install ./x-desktop-1.0.1-1.x86_64.rpm</code></td>
+            </tr>
+            <tr>
+              <td>آرتش لينكس</td>
+              <td><code>.pkg.tar.zst</code></td>
+              <td><code>sudo pacman -U x-desktop-1.0.1-1-x86_64.pkg.tar.zst</code></td>
+            </tr>
+            <tr>
+              <td>ويندوز x64</td>
+              <td>نسخة محمولة <code>.zip</code></td>
+              <td>استخرج الملف ثم شغّل <code>x-desktop.exe</code>. وملف <code>install-shortcut.bat</code> يضيف اختصاراً على سطح المكتب.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>والأربع جميعها مرفقة بأحدث إصدار:</p>
+      <div class="code">
+        <div class="code-head"><span>تنزيلات الإصدار</span></div>
+        <pre><code>https://github.com/Rassmos999/x-desktop/releases/latest</code></pre>
+      </div>
+
+      <h3>من الشيفرة المصدرية</h3>
+      <p>يتطلب البناء Node.js إصدار 20 أو أحدث، وPython 3، و<code>make</code>، وImageMagick أو <code>librsvg</code> لتوليد الأيقونات.</p>
+      <div class="code">
+        <div class="code-head"><span>البناء والتثبيت للمستخدم الحالي</span></div>
+        <pre><code>git clone https://github.com/Rassmos999/x-desktop.git
+cd x-desktop
+npm install
+make icons
+make install      # installs to ~/.local; use PREFIX=/usr with sudo for a system install
+x-desktop</code></pre>
+      </div>
+
+      <h3>الإزالة</h3>
+      <div class="code">
+        <div class="code-head"><span>إزالة ملفات التطبيق</span></div>
+        <pre><code>make uninstall                                 # source install
+sudo apt remove x-desktop                      # Debian, Ubuntu
+sudo dnf remove x-desktop                       # Fedora, RHEL
+sudo pacman -R x-desktop                        # Arch Linux</code></pre>
+      </div>
+      <p>إزالة التطبيق تُبقي ملف تعريفك وموديلاتك في مكانها. راجع <a href="#data">البيانات والإزالة</a> لحذفها أيضاً.</p>
+    </section>
+
+    <!-- 02 -->
+    <section id="first-run">
+      <p class="marker"><span class="num ltr">02</span><span class="label">أول تشغيل</span></p>
+      <h2>أول تشغيل والدخول</h2>
+      <p>
+        شغّل X Desktop من قائمة التطبيقات أو بتشغيل <code>x-desktop</code>. وتحمّل النافذة الأولى
+        <span class="ltr mono">x.com</span> في ملف تعريف أُنشئ لهذا التطبيق وحده، فلا تُستخدم جلسة متصفح
+        قائمة ولا تُعدَّل.
+      </p>
+      <p>
+        سجّل الدخول إلى حسابك على X كالمعتاد. وإذا كنت تسجّل الدخول عبر Google أو Apple، يوجّه العميل
+        تلك الخطوة إلى متصفح النظام، لأن هذين المزوّدين يرفضان المصادقة داخل العروض المضمّنة.
+      </p>
+
+      <h3>مساعد الجلسة</h3>
+      <p>
+        إذا لم يكتمل تسجيل الدخول في المتصفح داخل الجلسة المضمّنة، استخدم مساعد الجلسة لاستيراد رمز
+        الجلسة مباشرة. افتحه من قائمة شريط النظام أو بالنقر بالزر الأيمن في أي مكان واختيار
+        <strong>Session Assistant</strong>.
+      </p>
+      <ol>
+        <li>سجّل الدخول إلى X في نافذة متصفح عادية.</li>
+        <li>افتح أدوات المطوّر في المتصفح، وجد ملف تعريف الارتباط <code>auth_token</code> للنطاق <span class="ltr mono">x.com</span>، وانسخ قيمته. ولصق سلسلة ملف الارتباط كاملة يعمل أيضاً — فالعميل يستخرج الرمز منها.</li>
+        <li>الصقها في مساعد الجلسة ثم طبّق. فيُكتب الرمز في الجلسة المعزولة وتُعاد النافذة مسجَّلة الدخول.</li>
+      </ol>
+      <div class="note" data-tone="warn">
+        <span class="tag">تعامل معه ككلمة مرور</span>
+        <p>يمنح <code>auth_token</code> وصولاً كاملاً إلى حسابك. لا تلصقه في موقع لا تملكه، وسجّل الخروج من X إن اعتقدت أنه انكشف.</p>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="models">
+      <p class="marker"><span class="num ltr">03</span><span class="label">الموديلات</span></p>
+      <h2>الموديلات</h2>
+      <p>
+        محرك الذكاء هو خادم موديل محلي. ويحتاج شيئين: ملف التشغيل التنفيذي، وملف موديل واحد على الأقل.
+        وكلاهما يقيم خارج مجلد التطبيق كي يبقى بعد التحديثات.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">ما</th><th scope="col">لينكس</th><th scope="col">ويندوز</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>الموديلات</td>
+              <td><code>~/.local/share/x-desktop/models/</code></td>
+              <td><code>%USERPROFILE%\.local\share\x-desktop\models\</code></td>
+            </tr>
+            <tr>
+              <td>ملف التشغيل</td>
+              <td><code>~/.local/share/x-desktop/bin/</code></td>
+              <td><code>%USERPROFILE%\.local\share\x-desktop\bin\</code></td>
+            </tr>
+            <tr>
+              <td>إعداد الموديل النشط</td>
+              <td colspan="2"><code>config.json</code>، في المجلد <em>الأعلى</em> من <code>models/</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>الإعداد التلقائي</h3>
+      <p>
+        يثبّت سكربت الإعداد بيئة تشغيل llama.cpp بواجهة Vulkan، وينزّل موديل Gemma المطلوب، ويضع
+        الاثنين في المجلدين أعلاه. شغّله مرة واحدة بعد تثبيت العميل:
+      </p>
+      <div class="code">
+        <div class="code-head"><span>لينكس · ينزّل نحو 3 غيغابايت</span></div>
+        <pre><code>./tools/setup-ai-engine.sh</code></pre>
+      </div>
+      <p>وعلى ويندوز، نزّل أرشيف ملف التشغيل وملف الموديل إلى المجلدين الموضّحين أعلاه:</p>
+      <div class="code">
+        <div class="code-head"><span>ويندوز · ملف التشغيل</span></div>
+        <pre><code>https://github.com/ggml-org/llama.cpp/releases/download/b10828/llama-b10828-bin-win-vulkan-x64.zip</code></pre>
+      </div>
+
+      <h3>ملفات الموديلات</h3>
+      <p>
+        يحمّل المحرك موديلاً واحداً في كل مرة. وGemma مطلوب لمحرك الذكاء؛ أما الزوج البصري فاختياري
+        ولا يضيف إلا ترجمة النصوص داخل الصور.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">الملف</th><th scope="col">الحجم</th><th scope="col">الغرض</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>gemma-4-E2B-it-Q4_K_M.gguf</code></td>
+              <td>2.89 غيغابايت</td>
+              <td>مطلوب. موديل ترجمة النصوص.</td>
+            </tr>
+            <tr>
+              <td><code>Qwen3VL-2B-Instruct-Q4_K_M.gguf</code></td>
+              <td>1.03 غيغابايت</td>
+              <td>اختياري. موديل بصري للنصوص داخل الصور.</td>
+            </tr>
+            <tr>
+              <td><code>mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf</code></td>
+              <td>425 ميغابايت</td>
+              <td>اختياري. ملف الإسقاط الذي يحتاجه الموديل البصري. وملف الإسقاط وحده لا يفعل شيئاً.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>لينكس · نزّل كل ملف مباشرة</span></div>
+        <pre><code>M="$HOME/.local/share/x-desktop/models"; mkdir -p "$M"; cd "$M"
+
+curl -L -O https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf
+
+# optional vision pair
+curl -L -O https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF/resolve/main/Qwen3VL-2B-Instruct-Q4_K_M.gguf
+curl -L -O https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF/resolve/main/mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf</code></pre>
+      </div>
+
+      <div class="note" data-tone="info">
+        <span class="tag">كيف يُقرَّر توفر الرؤية</span>
+        <p>لا تُعرض ترجمة الصور إلا عندما يكون الموديل النشط قادراً على الرؤية <em>و</em> يكون ملف الإسقاط موجوداً. فإن غاب أحدهما، لا يعرض العميل زر الترجمة على الصور بدل أن يعرض شيئاً لا يمكنه الإجابة عنه.</p>
+      </div>
+
+      <h3>إضافة موديل خاص بك</h3>
+      <p>
+        أي موديل نصي بصيغة GGUF تضعه في مجلد الموديلات يظهر في اللوحة ويمكن اختياره منها. والتعرّف
+        يقوم على الأسماء لا على السحر: فالملف الذي يبدأ اسمه بـ<code>mmproj</code> يُعامل كملف إسقاط ولا
+        يُحمَّل كموديل أبداً، والملف يُعامل كقادر على الرؤية عندما يحتوي اسمه على عائلة رؤية معروفة
+        مثل <code>Qwen…VL</code>.
+      </p>
+      <p>
+        وهناك حدّان: يحمّل المحرك ملفاً واحداً في كل مرة، ونافذة السياق مهيّأة على 12,288 رمزاً، فالموديل
+        الذي لا يستوعب هذا المقدار سيُقيَّد أو يرفض التحميل. كما تستهلك الموديلات الأكبر ذاكرة كرت
+        رسوم أكبر بالتناسب.
+      </p>
+
+      <div class="note" data-tone="warn">
+        <span class="tag">التبديل يستغرق ثواني</span>
+        <p>تغيير الموديل النشط يحرّر ذاكرة كرت الرسوم التي تحمل الحالي ثم يحمّل الجديد، ويستغرق ذلك نحو ثانيتين إلى خمس على العتاد المرجعي. وتعرض اللوحة ذلك كحالة تبديل؛ وليس تجمّداً.</p>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="dashboard">
+      <p class="marker"><span class="num ltr">04</span><span class="label">اللوحة</span></p>
+      <h2>اللوحة</h2>
+      <p>
+        تعمل لوحة المحرك على <span class="ltr mono">http://127.0.0.1:28492</span>. افتحها بـ
+        <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd>، أو من قائمة شريط النظام، أو بالنقر بالزر الأيمن
+        واختيار <strong>AI Telemetry Dashboard</strong>.
+      </p>
+
+      <h3>ما تعرضه</h3>
+      <ul>
+        <li><strong>حالة المحرك</strong>: جاهز، أو قيد البدء، أو قيد التبديل، أو متوقف، والوسم ينصّ على أيها.</li>
+        <li><strong>ذاكرة كرت الرسوم والحرارة</strong>: تُقرأ من الكرت، لا تُقدَّر.</li>
+        <li><strong>السرعة</strong>: رموز في الثانية، مأخوذة من استدلال حقيقي. وتظهر <code>--</code> إلى أن تُقاس ترجمة فعلاً.</li>
+        <li><strong>تخصيص السياق</strong>: رموز النظام والدخل والناتج مقابل نافذة 12,288 رمزاً.</li>
+        <li><strong>سجل العمليات</strong>: آخر الترجمات، وكل واحدة موسومة بالمحرك الذي أنتجها.</li>
+      </ul>
+
+      <h3>لوحة الموديلات</h3>
+      <p>
+        تسرد لوحة الموديلات كل ملف موديل في المجلد، وتؤشّر على النشط، وتسمّي المسار، وتبدّل بينها.
+        وزر <strong>تبديل الموديل</strong> يعيد تشغيل المحرك على الملف المحدد ويخبرك كم استغرق؛ وزر
+        <strong>فتح المجلد</strong> يكشف مجلد الموديلات في مدير الملفات.
+      </p>
+
+      <h3>منصة الاختبار</h3>
+      <p>
+        الصق نصاً ثم مرّره على أي من المحرّكين. وتضمّ الإجابة زمن الرحلة ذهاباً وعودة والناتج، فيمكن
+        التحقق من ادّعاء حول جودة الترجمة قبل الاعتماد عليه في الخط الزمني.
+      </p>
+    </section>
+
+    <!-- 05 -->
+    <section id="translation">
+      <p class="marker"><span class="num ltr">05</span><span class="label">الترجمة</span></p>
+      <h2>الترجمة</h2>
+      <p>هناك محرّكان وليسا متكافئين. ومعرفة أيّهما يجيب هي المقصد.</p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">الوجه</th><th scope="col">محرك الذكاء</th><th scope="col">المحرك السريع</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>أين يعمل</td>
+              <td>على كرت الرسوم لديك، ويُقدَّم من <span class="ltr mono">127.0.0.1:28491</span></td>
+              <td>طلب سحابي إلى <span class="ltr mono">translate.googleapis.com</span></td>
+            </tr>
+            <tr>
+              <td>يحتاج موديلاً</td>
+              <td>نعم</td>
+              <td>لا</td>
+            </tr>
+            <tr>
+              <td>يخرج النص من جهازك</td>
+              <td>لا</td>
+              <td>نعم</td>
+            </tr>
+            <tr>
+              <td>الاستخدام المعتاد</td>
+              <td>نصوص تقنية أو اصطلاحية تكون فيها الصياغة مهمة</td>
+              <td>فهم المعنى فوراً، أو العمل بلا كرت رسوم</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note" data-tone="warn">
+        <span class="tag">اقرأ هذا قبل الاعتماد على عبارة الخصوصية</span>
+        <p>محرك الذكاء يُبقي النص على جهازك، والمحرك السريع لا يفعل — بل يرسل النص إلى Google. كما يعود العميل إلى المسار السحابي عندما لا يُرجع الموديل المحلي ناتجاً صالحاً، فقد يُكمل طلب بدأته على محرك الذكاء عبر الشبكة. وتضع اللوحة وسماً على كل نتيجة في سجل العمليات يبيّن المحرك الذي أنتجها، وهي الطريقة الموثوقة لمعرفة أي مسار نُفِّذ.</p>
+      </div>
+
+      <h3>ترجمة منشور</h3>
+      <ul>
+        <li><strong>منشور كامل</strong>: استخدم زر الترجمة تحت نص المنشور. فيظهر الناتج في مكانه مع زر لإعادة الأصل.</li>
+        <li><strong>عبارة</strong>: ظلّل النص واستخدم التلميح العائم للترجمة أو النسخ أو الاستبدال في مكانه.</li>
+        <li><strong>تبديل المحرك</strong>: يتيح لك التلميح وإجراء الترجمة في المكان إعادة تشغيل النص نفسه على المحرك الآخر.</li>
+        <li><strong>نص داخل صورة</strong>: يظهر كزر ترجمة على الصورة، وفقط عندما يكون الموديل البصري وملف إسقاطه مثبّتين معاً.</li>
+      </ul>
+    </section>
+
+    <!-- 06 -->
+    <section id="filtering">
+      <p class="marker"><span class="num ltr">06</span><span class="label">الفلترة</span></p>
+      <h2>فلترة الخط الزمني</h2>
+      <p>
+        تُزال المنشورات المروّجة والمنشورات المعزَّزة ولافتات الاشتراك من الخط الزمني قبل رسمها، وتُحجب
+        الطلبات إلى نقاط الإعلانات والتحليلات المعروفة على مستوى الشبكة. وتغطي قائمة الحجب نقاط إعلانات
+        تويتر وX، وخدمات إعلانات Google، وDoubleClick.
+      </p>
+      <p>
+        ولأن الفلترة تجري على الطلبات لا على الترميز النهائي، فهي تزيل المنشورات المروّجة نفسها دون أن
+        تؤثر على تحميل الفيديو أو الصور من الخط الزمني نفسه.
+      </p>
+    </section>
+
+    <!-- 07 -->
+    <section id="shortcuts">
+      <p class="marker"><span class="num ltr">07</span><span class="label">الاختصارات</span></p>
+      <h2>اختصارات لوحة المفاتيح</h2>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">الاختصار</th><th scope="col">الإجراء</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Q</kbd></td><td>الخروج وتحرير ذاكرة كرت الرسوم التي يشغلها المحرك</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></td><td>فتح لوحة المحرك</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>1</kbd> … <kbd>5</kbd></td><td>الرئيسية، واستكشف، والإشعارات، والرسائل، والمحفوظات</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>N</kbd></td><td>كتابة منشور جديد</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>=</kbd></td><td>تكبير العرض</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>-</kbd></td><td>تصغير العرض</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>0</kbd></td><td>إعادة العرض إلى 100%</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + عجلة الفأرة</td><td>تكبير وتصغير متصل</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></td><td>أدوات المطوّر</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        والنقر بالزر الأيمن داخل النافذة يفتح قائمة فيها الترجمة والفتح في المتصفح ونسخ الرابط وحفظ
+        الصورة والتنقل والتكبير. وعلى لينكس، تُدار مفاتيح الوسائط وأدوات سطح المكتب عبر MPRIS؛ وإغلاق
+        النافذة يُبقي التطبيق يعمل في شريط النظام.
+      </p>
+    </section>
+
+    <!-- 08 -->
+    <section id="data">
+      <p class="marker"><span class="num ltr">08</span><span class="label">البيانات</span></p>
+      <h2>البيانات والإزالة</h2>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">ما</th><th scope="col">لينكس</th><th scope="col">ويندوز</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ملف التعريف: ملفات الارتباط والتخزين والذاكرة المؤقتة</td>
+              <td><code>~/.config/x-desktop/</code></td>
+              <td><code>%APPDATA%\x-desktop\</code></td>
+            </tr>
+            <tr>
+              <td>الموديلات وملف التشغيل</td>
+              <td><code>~/.local/share/x-desktop/</code></td>
+              <td><code>%USERPROFILE%\.local\share\x-desktop\</code></td>
+            </tr>
+            <tr>
+              <td>ملفات التطبيق</td>
+              <td><code>~/.local/lib/x-desktop/</code> لتثبيت المستخدم، و<code>/usr/lib/x-desktop/</code> لتثبيت النظام</td>
+              <td>المجلد المستخرج</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        حذف ملف التعريف يسجّل خروجك ويمسح الجلسة المعزولة. وحذف مجلد الموديلات يحرّر نحو 3 إلى 4.5
+        غيغابايت حسب الموديلات التي نزّلتها؛ وعند التشغيل التالي لا يجد العميل موديلاً ويقول ذلك.
+      </p>
+    </section>
+
+    <!-- 09 -->
+    <section id="troubleshooting">
+      <p class="marker"><span class="num ltr">09</span><span class="label">حلّ المشكلات</span></p>
+      <h2>حلّ المشكلات</h2>
+
+      <h3>اللوحة تقول إن المحرك متوقف</h3>
+      <p>
+        لا شيء يجيب على المنفذ 28491. افحص ثلاثة أشياء بالترتيب: وجود ملف موديل في مجلد الموديلات،
+        ووجود ملف <code>llama-server</code> في مجلد التشغيل، وألّا يكون هناك عملية أخرى تحتلّ المنفذ.
+      </p>
+      <div class="code">
+        <div class="code-head"><span>لينكس · افحص ما يفعله المحرك</span></div>
+        <pre><code>ls -la ~/.local/share/x-desktop/models/ ~/.local/share/x-desktop/bin/llama-server
+curl -s http://127.0.0.1:28491/health
+ss -ltnp | grep 28491</code></pre>
+      </div>
+      <p>شغّله يدوياً لترى خطأ المحرك نفسه، وهو ما يتجاهله العميل عند تشغيله منفصلاً:</p>
+      <div class="code">
+        <div class="code-head"><span>لينكس · شغّل المحرك في المقدمة</span></div>
+        <pre><code>~/.local/share/x-desktop/bin/llama-server \
+  --model ~/.local/share/x-desktop/models/gemma-4-E2B-it-Q4_K_M.gguf \
+  --port 28491 --host 127.0.0.1 -ngl 99 -fa on -c 12288</code></pre>
+      </div>
+
+      <h3>الترجمة لا تُرجع شيئاً، أو يجيب المحرك الخطأ</h3>
+      <p>
+        تأكد أن الموديل محمَّل بمراقبة محرك الذكاء لا المحرك السريع في منصة اختبار اللوحة. وعندما لا
+        يُنتج الموديل المحلي ناتجاً صالحاً يكمل العميل الطلب عبر المسار السحابي، فنجاح النتيجة وحده
+        لا يثبت أن المحرك المحلي أجاب — وسجل العمليات يبيّن أي محرك كان.
+      </p>
+
+      <h3>تبديل الموديل يبدو كأنه علّق</h3>
+      <p>
+        إنه يعيد توزيع ذاكرة كرت الرسوم. وتعرض اللوحة حالة تبديل، ويُبلّغ التبديل عن مدته عند اكتماله.
+        وإن فشل بدلاً من ذلك، تسمّي اللوحة السبب وتُبقي الموديل السابق محدداً. والتبديل الذي يتجاوز
+        مهلة الانتظار يُبلَّغ عنه كفشل بدل أن ينتظر بلا نهاية.
+      </p>
+
+      <h3>تسجيل الدخول عبر Google مرفوض</h3>
+      <p>
+        يحجب Google العروض المضمّنة. ويكتشف العميل ذلك ويفتح متصفح نظامك بدلاً منها، ثم يستورد الجلسة
+        عبر مساعد الجلسة. وإن لم يثبت الاستيراد، فالرمز على الأرجح منتهٍ — أعد الاستيراد بقيمة منسوخة حديثاً.
+      </p>
+
+      <h3>قواعد نوافذ Wayland</h3>
+      <p>
+        يضمّ الإصدار قواعد نموذجية لواجهتي Niri وHyprland تحت <code>usr/share/doc/x-desktop/</code>. وهي
+        أمثلة لا متطلبات: انسخ ما تريده إلى إعدادك الخاص.
+      </p>
+
+      <h3>ذاكرة كرت الرسوم ما زالت مشغولة بعد إغلاق النافذة</h3>
+      <p>
+        إغلاق النافذة يُبقي التطبيق في شريط النظام، ويُبقي المحرك موديله محمَّلاً كي تكون الترجمة
+        التالية فورية. استخدم <kbd>Ctrl</kbd> + <kbd>Q</kbd> أو إجراء <strong>Quit</strong> من شريط النظام لإيقاف
+        المحرك وتحرير الذاكرة.
+      </p>
+    </section>
+
+    <!-- 10 -->
+    <section id="advanced">
+      <p class="marker"><span class="num ltr">10</span><span class="label">مرجع متقدّم</span></p>
+      <h2>مرجع متقدّم</h2>
+      <p>
+        كيف يُشغَّل المحرك فعلاً، لمن ينوي ضبطه. يبدأ العميل الخادم بهذه المعطيات؛ ويمكن تشغيل الأمر
+        نفسه يدوياً للتشخيص.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">المعطى</th><th scope="col">المعنى</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>--model</code></td><td>ملف الموديل النشط، ويُستنتج من <code>config.json</code></td></tr>
+            <tr><td><code>--port</code> / <code>--host</code></td><td>خادم محلي على <code>127.0.0.1:28491</code></td></tr>
+            <tr><td><code>-ngl 99</code></td><td>ترحيل كل الطبقات إلى كرت الرسوم</td></tr>
+            <tr><td><code>-fa on</code></td><td>الانتباه السريع (flash attention)</td></tr>
+            <tr><td><code>-c 12288</code></td><td>نافذة السياق بالرموز</td></tr>
+            <tr><td><code>-t 6</code></td><td>خيوط المعالج المستخدمة إلى جانب كرت الرسوم</td></tr>
+            <tr><td><code>-np 1</code></td><td>خانة توازٍ واحدة؛ ويستخدم النص والرؤية معرّفات خانة منفصلة</td></tr>
+            <tr><td><code>--mmproj</code></td><td>يُرفق فقط عندما يكون الموديل النشط قادراً على الرؤية وملف الإسقاط موجوداً</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>ملف التشغيل</h3>
+      <p>
+        المحرك هو خادم llama.cpp بإصدار <span class="ltr mono">b10828</span>، مبنيّ بواجهة Vulkan. ويحمل
+        مكتباته المشتركة في مجلد التشغيل، ولذلك يضبط العميل مسار المكتبات قبل تشغيله بدل الاعتماد على
+        حزم النظام. والأرشيف هو <span class="ltr mono">llama-b10828-bin-ubuntu-vulkan-x64.tar.gz</span>
+        على لينكس و<span class="ltr mono">llama-b10828-bin-win-vulkan-x64.zip</span> على ويندوز.
+      </p>
+
+      <h3>نقاط النهاية</h3>
+      <p>تعرض اللوحة والمحرك سطح HTTP محلياً صغيراً، مربوطاً بواجهة الاسترجاع المحلية فقط.</p>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th scope="col">نقطة النهاية</th><th scope="col">المنفذ</th><th scope="col">الغرض</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>GET /api/telemetry</code></td><td>28492</td><td>حالة المحرك والموديل وذاكرة كرت الرسوم والسرعة والسجل</td></tr>
+            <tr><td><code>GET /api/models</code></td><td>28492</td><td>الموديلات المثبَّتة والموديل النشط وتوفر الرؤية</td></tr>
+            <tr><td><code>POST /api/models/active</code></td><td>28492</td><td>تبديل الموديل النشط وإعادة تشغيل المحرك</td></tr>
+            <tr><td><code>POST /api/models/reveal</code></td><td>28492</td><td>فتح مجلد الموديلات في مدير الملفات</td></tr>
+            <tr><td><code>POST /api/translate</code></td><td>28492</td><td>ترجمة نص عبر أي من المحرّكين</td></tr>
+            <tr><td><code>POST /api/translate-image</code></td><td>28492</td><td>ترجمة نص موجود في صورة</td></tr>
+            <tr><td><code>GET /health</code></td><td>28491</td><td>حياة المحرك، ويستخدمه العميل</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        نقاط الموديلات تغيّر الحالة، لذا تقبل الطلبات من أصل اللوحة على هذا الجهاز وحده. أما نقاط القراءة
+        ونقاط الترجمة فغير متأثرة بذلك.
+      </p>
+    </section>
+
+    <!-- 11 -->
+    <section id="sources">
+      <p class="marker"><span class="num ltr">11</span><span class="label">المصادر</span></p>
+      <h2>المصادر</h2>
+      <p>كل ما يؤكّده هذا الدليل عن التنزيلات وأحجام الملفات مأخوذ من هذه المواقع الأصلية.</p>
+      <ol>
+        <li>unsloth، <a href="https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF">Gemma-4-E2B-it GGUF</a> — موديل النصوص المطلوب.</li>
+        <li>Qwen، <a href="https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct-GGUF">Qwen3-VL-2B-Instruct GGUF</a>: الموديل البصري الاختياري وملف إسقاطه.</li>
+        <li>ggml-org، <a href="https://github.com/ggml-org/llama.cpp/releases/tag/b10828">llama.cpp build b10828</a>: بيئة تشغيل الاستدلال.</li>
+        <li>Rassmos999، <a href="https://github.com/Rassmos999/x-desktop/releases">إصدارات X Desktop</a>: حزم التثبيت المذكورة أعلاه.</li>
+      </ol>
+    </section>
+
+  </main>
+</div>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span class="label">دليل X Desktop</span>
+    <span class="label ltr">MIT License</span>
+    <span class="spacer" style="margin-inline-start:auto;"></span>
+    <a href="../../">نظرة عامة</a>
+    <a href="https://github.com/Rassmos999/x-desktop">GitHub</a>
+    <a href="../" hreflang="en" lang="en">English</a>
+  </div>
+</footer>
+
+<script src="../../assets/manual.js" defer></script>
+</body>
+</html>
