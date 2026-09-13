@@ -1,9 +1,9 @@
 Name:           x-desktop
 Version:        %{version}
 Release:        1%{?dist}
-Summary:        Standalone X/Twitter Desktop Client with Wayland and Niri integration
+Summary:        Standalone X/Twitter Desktop Client with isolated session profile and GPU translation
 License:        MIT
-URL:            https://github.com/x-desktop/x-desktop
+URL:            https://github.com/Rassmos999/x-desktop
 Source0:        %{name}-%{version}.tar.gz
 
 BuildArch:      x86_64
@@ -52,4 +52,3 @@ install -Dm644 data/hyprland-rules.conf %{buildroot}/usr/share/doc/%{name}/hyprl
 /usr/share/doc/%{name}/README.md
 /usr/share/doc/%{name}/niri-rules.kdl
 /usr/share/doc/%{name}/hyprland-rules.conf
-
