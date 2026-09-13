@@ -25,6 +25,24 @@ function preprocessSlang(text) {
     .replace(/\bthat\x27s\s+so\s+([a-zA-Z0-9_]+)\b/gi, "that is typically $1");
 }
 
+function splitIntoChunks(fullText, maxChunkSize = 1400) {
+  if (!fullText || fullText.length <= maxChunkSize) return [fullText || ''];
+  const paragraphs = fullText.split(/\n\n+/);
+  const chunks = [];
+  let current = '';
+  for (const p of paragraphs) {
+    if (!p.trim()) continue;
+    if (current.length + p.length + 2 > maxChunkSize) {
+      if (current) chunks.push(current.trim());
+      current = p;
+    } else {
+      current = current ? current + '\n\n' + p : p;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
+
 class AIEngine {
   constructor() {
     this.process = null;
@@ -285,7 +303,20 @@ class AIEngine {
     }
   }
 
-  queryGemma(text) {
+  async queryGemma(text) {
+    if (text.length > 1500) {
+      const chunks = splitIntoChunks(text, 1300);
+      const results = [];
+      for (const chunk of chunks) {
+        const res = await this.queryGemmaSingle(chunk);
+        results.push(res);
+      }
+      return results.join('\n\n');
+    }
+    return this.queryGemmaSingle(text);
+  }
+
+  queryGemmaSingle(text) {
     const systemPrompt = "You are an elite bilingual translator for AI engineers, machine learning researchers, and software developers.\n" +
       "Translate the text from any source language (English, Chinese, Japanese, Korean, French, etc.) into authentic, natural Arabic as used by modern tech developers.\n\n" +
       "Rules:\n" +
@@ -311,7 +342,7 @@ class AIEngine {
       cache_prompt: false,
       id_slot: 0, // Isolated Text Slot
       stop: ["\n\nملاحظة:", "\n\nNote:", "Translation:"],
-      max_tokens: 1024
+      max_tokens: 1800
     });
 
     return this.postJson('/v1/chat/completions', payload, 45000).then(res => {
@@ -379,35 +410,39 @@ class AIEngine {
   }
 
   fallbackWebTranslate(text, targetLang = 'ar') {
+    if (text.length > 1200) {
+      const chunks = splitIntoChunks(text, 1000);
+      return Promise.all(chunks.map(c => this.fallbackWebTranslateSingle(c, targetLang)))
+        .then(results => results.join('\n\n'));
+    }
+    return this.fallbackWebTranslateSingle(text, targetLang);
+  }
+
+  fallbackWebTranslateSingle(text, targetLang = 'ar') {
     return new Promise((resolve) => {
-      const url = `https://translate.google.com/m?sl=auto&tl=${targetLang}&q=${encodeURIComponent(text)}`;
+      const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + targetLang + '&dt=t&q=' + encodeURIComponent(text);
       const req = https.get(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
       }, (res) => {
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
-          const match = data.match(/<div class="result-container">([\s\S]*?)<\/div>/);
-          if (match && match[1]) {
-            let translated = match[1]
-              .replace(/<br\s*\/?>/gi, '\n')
-              .replace(/<[^>]+>/g, '')
-              .replace(/&quot;/g, '"')
-              .replace(/&#39;/g, "'")
-              .replace(/&amp;/g, '&')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>');
-            resolve(translated);
-          } else {
-            resolve(text);
-          }
+          try {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
+              const translated = parsed[0].map(item => item[0]).join('');
+              resolve(translated || text);
+              return;
+            }
+          } catch (e) {}
+          resolve(text);
         });
       });
 
       req.on('error', () => resolve(text));
-      req.setTimeout(4500, () => {
+      req.setTimeout(8000, () => {
         req.destroy();
         resolve(text);
       });

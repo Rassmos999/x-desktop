@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080a0f">
+  <title>X Desktop - Engineering Architecture & Model Deployment Catalog</title>
+  <style>
+    :root {
+      --bg-base: #080a0f;
+      --bg-surface: #10131b;
+      --bg-surface-elevated: #161b26;
+      --bg-code: #0b0e14;
+      
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(255, 255, 255, 0.18);
+      
+      --accent-brand: #1d9bf0;
+      --accent-accent: #38bdf8;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(16, 19, 27, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      background: #000;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .version-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 36px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #fff;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 720px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    th {
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--bg-code);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #e2e8f0;
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+
+    .key-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">X</div>
+      <div>
+        <span class="brand-name">X Desktop Documentation</span>
+      </div>
+      <span class="version-tag">v1.0.1</span>
+    </div>
+    <div>
+      <a href="https://github.com/Rassmos999/x-desktop" target="_blank" style="color:var(--text-muted); text-decoration:none; font-size:13px;">GitHub Repository</a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section>
+      <h1>Engineering Architecture & Deployment Catalog</h1>
+      <p>Technical reference for running X Desktop, deploying local neural translation models on GPU, and managing dual-engine translations on Linux and Windows.</p>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="card">
+      <h2>01. System Architecture</h2>
+      <p>X Desktop is a standalone client engineered to decouple X browsing from your daily browser instance, enforcing complete profile isolation while integrating native OS capabilities:</p>
+      
+      <div class="grid-2" style="margin-top:14px;">
+        <div style="background:var(--bg-surface-elevated); padding:16px; border-radius:8px; border:1px solid var(--border-subtle);">
+          <strong style="font-size:13px; color:#fff; display:block; margin-bottom:6px;">Isolated Profile Storage</strong>
+          <p style="margin:0; font-size:13px;">Cookies, LocalStorage, and Cache are strictly contained in <code>~/.config/x-desktop</code> on Linux and <code>%APPDATA%\x-desktop</code> on Windows. Zero credential leakage with Chrome, Brave, or Edge.</p>
+        </div>
+        <div style="background:var(--bg-surface-elevated); padding:16px; border-radius:8px; border:1px solid var(--border-subtle);">
+          <strong style="font-size:13px; color:#fff; display:block; margin-bottom:6px;">Dual-Engine Neural Pipeline</strong>
+          <p style="margin:0; font-size:13px;">Default local fallback delivers sub-80ms human-grade translations. GPU acceleration offloads deep technical/CS reasoning to local GGUF models on NVIDIA RTX hardware.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Model Catalog Section -->
+    <section class="card">
+      <h2>02. Local Model Catalog & GGUF Deployment</h2>
+      <p>The desktop engine interfaces with standalone GGUF quantized models executed through an isolated local runtime process on port <code>28491</code>.</p>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Format / Quant</th>
+              <th>Size</th>
+              <th>Context</th>
+              <th>Primary Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Gemma 4 (E2B-it)</strong></td>
+              <td><code>Q4_K_M.gguf</code></td>
+              <td>2.9 GB</td>
+              <td>12,288</td>
+              <td>Deep technical CS, AI jargon, idioms, multi-line formatting</td>
+            </tr>
+            <tr>
+              <td><strong>Qwen3-VL (2B-Instruct)</strong></td>
+              <td><code>Q4_K_M.gguf</code></td>
+              <td>1.03 GB</td>
+              <td>8,192</td>
+              <td>Multimodal Vision OCR and compact resource environments</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:18px;">
+        <strong style="font-size:13px; color:#fff;">Deployment File Paths:</strong>
+        <p style="margin-top:6px;">Place the GGUF weights in the following operating system directory:</p>
+        <pre>Linux:   ~/.local/share/x-desktop/models/gemma-4-E2B-it-Q4_K_M.gguf
+Windows: %USERPROFILE%\.local\share\x-desktop\models\gemma-4-E2B-it-Q4_K_M.gguf</pre>
+      </div>
+    </section>
+
+    <!-- Hardware Acceleration Guide -->
+    <section class="card">
+      <h2>03. GPU Acceleration (Vulkan & CUDA)</h2>
+      <p>X Desktop executes models directly against your discrete GPU (NVIDIA RTX 4060 or compatible) to sustain 85+ tokens per second:</p>
+      
+      <pre># Automated Runtime Launch Parameters:
+llama-server   --model ~/.local/share/x-desktop/models/gemma-4-E2B-it-Q4_K_M.gguf   --port 28491   --host 127.0.0.1   -ngl 99   -fa on   -c 12288   -t 6   -np 1   --reasoning off   --reasoning-budget 0   --log-disable</pre>
+      
+      <p style="margin-top:10px;">The runtime automatically binds to <code>libggml-vulkan.so</code> on Linux and <code>vulkan-1.dll</code> on Windows, ensuring complete layer offloading with ~2.7 GB VRAM footprint.</p>
+    </section>
+
+    <!-- Keyboard Shortcuts & Controls -->
+    <section class="card">
+      <h2>04. Command & Shortcut Reference</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Shortcut</th>
+              <th>Action</th>
+              <th>Subsystem Scope</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="key-badge">Ctrl + Q</span></td>
+              <td>Immediate App Termination & Full VRAM Purge</td>
+              <td>Terminates client and SIGKILLs llama-server process</td>
+            </tr>
+            <tr>
+              <td><span class="key-badge">Ctrl + Shift + D</span></td>
+              <td>Open AI Telemetry Dashboard</td>
+              <td>Launches live GPU & Context Monitor on port 28492</td>
+            </tr>
+            <tr>
+              <td><span class="key-badge">Text Selection</span></td>
+              <td>Interactive Translation Tooltip</td>
+              <td>Instant popup for single words or sentences with in-place replace</td>
+            </tr>
+            <tr>
+              <td><span class="key-badge">Ctrl + Wheel</span></td>
+              <td>Smooth Dynamic Interface Zoom</td>
+              <td>Renderer scale factor adjustment</td>
+            </tr>
+            <tr>
+              <td><span class="key-badge">Ctrl + N</span></td>
+              <td>Compose New Post</td>
+              <td>Direct shortcut to post composition</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Session Bridge & Google Sign-in -->
+    <section class="card">
+      <h2>05. Google Authentication & Session Bridge</h2>
+      <p>Google blocks embedded Electron webviews with security error <code>Couldn't sign you in - This browser or app may not be secure</code>. X Desktop resolves this via the native Session Bridge:</p>
+      
+      <ol style="margin-left:20px; color:var(--text-muted); font-size:13px; line-height:1.8;">
+        <li>Click <strong>Sign in with Google</strong> or open <strong>Session Assistant</strong> from the context menu.</li>
+        <li>Authentication opens securely in your default desktop browser (Chrome, Brave, or Edge).</li>
+        <li>Copy your <code>auth_token</code> cookie value and paste it into the Session Assistant.</li>
+        <li>The client injects the token via <code>session.defaultSession.cookies.set()</code> with Secure and HttpOnly flags, establishing a permanent isolated session.</li>
+      </ol>
+    </section>
+
+  </main>
+
+</body>
+</html>

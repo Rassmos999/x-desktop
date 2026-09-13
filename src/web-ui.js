@@ -72,7 +72,18 @@ function startWebUiServer() {
     // Serve Documentation Catalog
     if (url.pathname === '/docs' || url.pathname === '/guide') {
       try {
-        const docsHtml = fs.readFileSync(DOCS_HTML_PATH, 'utf8');
+        let docsPath = DOCS_HTML_PATH;
+        if (!fs.existsSync(docsPath)) {
+          const alt1 = path.join(__dirname, 'docs', 'index.html');
+          const alt2 = path.join(process.cwd(), 'docs', 'index.html');
+          const alt3 = path.join(os.homedir(), 'Projects', 'x', 'docs', 'index.html');
+          const alt4 = path.join(os.homedir(), 'Projects', 'x-desktop', 'docs', 'index.html');
+          if (fs.existsSync(alt1)) docsPath = alt1;
+          else if (fs.existsSync(alt2)) docsPath = alt2;
+          else if (fs.existsSync(alt3)) docsPath = alt3;
+          else if (fs.existsSync(alt4)) docsPath = alt4;
+        }
+        const docsHtml = fs.readFileSync(docsPath, 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(docsHtml);
       } catch (err) {

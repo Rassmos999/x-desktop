@@ -31,7 +31,7 @@ $(ELECTRON)/electron:
 	node node_modules/electron/install.js
 
 # App runtime assets
-APP_FILES = package.json src data
+APP_FILES = package.json src data docs
 
 icons:
 	@python3 tools/make-icons.py
