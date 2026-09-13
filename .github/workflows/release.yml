@@ -39,6 +39,7 @@ jobs:
           cp package.json stage/x-desktop-win32-x64/resources/app/
           cp -r src stage/x-desktop-win32-x64/resources/app/
           cp -r data stage/x-desktop-win32-x64/resources/app/
+          cp -r docs stage/x-desktop-win32-x64/resources/app/ 2>/dev/null || true
           cp -r node_modules stage/x-desktop-win32-x64/resources/app/
           rm -rf stage/x-desktop-win32-x64/resources/app/node_modules/electron stage/x-desktop-win32-x64/resources/app/node_modules/.bin/electron
           cat > stage/x-desktop-win32-x64/x-desktop.bat <<'BAT'
@@ -96,8 +97,31 @@ jobs:
             dist/*.tar.gz
             dist/*.rpm
 
+  build-arch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Arch Linux package inside container
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work archlinux:base-devel bash -c "
+            pacman -Syu --noconfirm &&
+            pacman -S --noconfirm nodejs npm librsvg python imagemagick git sudo &&
+            useradd -m builder &&
+            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers &&
+            chown -R builder:builder /work &&
+            su builder -c 'npm install --no-audit --no-fund && node node_modules/electron/install.js && python3 tools/make-icons.py && packaging/build-arch.sh'
+          "
+
+      - name: Upload Arch Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-desktop-arch-package
+          path: dist/*.pkg.tar.zst
+
   release:
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-arch]
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows Artifact
@@ -112,6 +136,12 @@ jobs:
           name: x-desktop-linux-packages
           path: release-assets
 
+      - name: Download Arch Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x-desktop-arch-package
+          path: release-assets
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -119,15 +149,12 @@ jobs:
           name: "X Desktop v${{ github.ref_name }}"
           generate_release_notes: true
           body: |
-            ## X Desktop Client Release 🚀
-            
-            Standalone X/Twitter Desktop Client for **Windows** and **Linux**.
-            
-            ### Features:
-            - Standalone isolated session (no interference with Chrome/Edge/Brave).
-            - Native Wayland & Windows integration.
-            - Ad & Boosted tweet filter.
-            - Instant inline Arabic translation.
-            - Picture-in-Picture floating video window.
-            - MPRIS media player controls (Linux).
-            - Built with Electron.
+            ## X Desktop Client Release
+
+            Standalone X/Twitter Desktop Client for Windows and Linux with isolated profile architecture, hardware-accelerated local translation, and system integration.
+
+            ### Included Distribution Packages:
+            - **Windows (x64)**: Portable archive with automated desktop shortcut installer (.zip).
+            - **Debian / Ubuntu**: Native installation package (.deb).
+            - **Fedora / RHEL**: Native RPM package (.rpm).
+            - **Arch Linux**: Pacman package (.pkg.tar.zst).

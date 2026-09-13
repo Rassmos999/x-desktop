@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#06080c">
-  <title>غرفة عمليات المحرك المحلي // X Desktop</title>
+  <title>X Desktop Neural Telemetry Dashboard</title>
   <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-  <a class="skip" href="#console">تخطَّ إلى منصة الاختبار</a>
+  <a class="skip" href="#console">Skip to console</a>
 
   <div class="shell">
-    <aside class="panel rail" id="rail" data-state="ok" aria-label="حالة المحرك">
-      <div class="rail-state"><span class="glyph" aria-hidden="true"></span><span id="railState" role="status">المحرك يعمل</span></div>
+    <aside class="panel rail" id="rail" data-state="ok" aria-label="Engine Status">
+      <div class="rail-state"><span class="glyph" aria-hidden="true"></span><span id="railState" role="status">ENGINE NOMINAL</span></div>
       <div class="rail-model mono ltr" id="txtModelStatus">Gemma-4-E2B · SLOT 0 · NOMINAL</div>
       <div class="rrow">
         <div class="lb mono ltr">VRAM</div>
         <div class="vl mono ltr"><span id="valVram">--</span> <small id="subVram">/ 8,188 MB</small></div>
       </div>
       <div class="rrow">
-        <div class="lb">الحرارة</div>
+        <div class="lb">TEMP</div>
         <div class="vl mono ltr"><span id="valTemp">--</span> <small>°C</small></div>
       </div>
       <div class="rrow">
@@ -27,11 +27,11 @@
         <div class="vl mono ltr"><span id="valSpeed">--</span></div>
       </div>
       <div class="rrow">
-        <div class="lb">التوكنز / الاستدعاءات</div>
+        <div class="lb">TOKENS / REQS</div>
         <div class="vl mono ltr"><span id="valTokens">--</span> <small id="subRequests">/ 0</small></div>
       </div>
       <div class="rrow">
-        <div class="lb">الكاش</div>
+        <div class="lb">CACHE</div>
         <div class="vl mono ltr"><span id="valCache">--</span> <small id="subCache">· 0 hit</small></div>
       </div>
       <div class="rail-clock mono ltr" id="clock">--:--:--</div>
@@ -40,28 +40,28 @@
     <div class="main">
       <section class="panel" id="console" aria-labelledby="consoleTitle">
         <div class="chead">
-          <h2 id="consoleTitle">منصة الاختبار</h2>
+          <h2 id="consoleTitle">Interactive Test Console</h2>
           <span class="sub mono ltr">01 · INPUT → 02 · ENGINE → 03 · OUTPUT</span>
         </div>
         <div class="step">
           <span class="step-n" aria-hidden="true">1</span>
           <div>
-            <label class="field-label" for="txtInput">نص التغريدة الإنجليزية</label>
+            <label class="field-label" for="txtInput">Source Tweet</label>
             <textarea id="txtInput" class="ltr" style="text-align:left" dir="ltr" placeholder="Paste an English tweet to test it instantly…">The new timeline loads faster, but quoted posts still jump on scroll.</textarea>
           </div>
         </div>
         <div class="step">
           <span class="step-n" aria-hidden="true">2</span>
           <div class="btnrow">
-            <button id="btnTranslateAi" class="btn btn-primary" type="button">ترجمة AI</button>
-            <button id="btnTranslateFast" class="btn btn-ghost" type="button">الترجمة السريعة</button>
+            <button id="btnTranslateAi" class="btn btn-primary" type="button">AI Engine</button>
+            <button id="btnTranslateFast" class="btn btn-ghost" type="button">Fast Engine</button>
             <span id="lblLatency" class="latency mono ltr">RTT —</span>
           </div>
         </div>
         <div class="step">
           <span class="step-n" aria-hidden="true">3</span>
           <div>
-            <div class="result" id="txtResult" role="status">ستظهر الترجمة هنا فوراً…</div>
+            <div class="result" id="txtResult" role="status">Arabic translation will appear here...</div>
             <div class="result-hint" id="resultHint"></div>
           </div>
         </div>
@@ -70,16 +70,16 @@
       <div class="gauges">
         <section class="panel" aria-labelledby="tankTitle">
           <div class="chead">
-            <h2 id="tankTitle">خزان السياق</h2>
-            <span class="sub mono ltr" id="contextUtilization">السعة: 8,192 توكن</span>
+            <h2 id="tankTitle">Context Window Allocation</h2>
+            <span class="sub mono ltr" id="contextUtilization">Capacity: 12,288 tokens</span>
           </div>
-          <div class="tankbar context-bar" role="img" aria-label="خريطة استهلاك نافذة السياق">
+          <div class="tankbar context-bar" role="img" aria-label="Context Window Utilization">
             <span class="seg seg-sys mono ltr" id="barSystem">SYS</span>
             <span class="seg seg-in mono ltr" id="barInput">IN</span>
             <span class="seg seg-out mono ltr" id="barOutput">OUT</span>
-            <span class="seg seg-free" id="barFree">شاغر</span>
+            <span class="seg seg-free" id="barFree">FREE</span>
           </div>
-          <div class="tankcap"><span class="mono ltr" id="tankLegend">SYS · IN · OUT</span><span id="tankFree">شاغر</span></div>
+          <div class="tankcap"><span class="mono ltr" id="tankLegend">SYS · IN · OUT</span><span id="tankFree">FREE</span></div>
         </section>
         <section class="panel" aria-labelledby="routesTitle">
           <div class="chead">

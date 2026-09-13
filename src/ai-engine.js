@@ -421,6 +421,16 @@ class AIEngine {
       } catch (e) {}
       this.process = null;
     }
+    try {
+      const { execSync } = require('child_process');
+      if (process.platform === 'win32') {
+        execSync('taskkill /F /IM llama-server.exe 2>nul || exit 0');
+      } else {
+        execSync('pkill -9 -f llama-server 2>/dev/null || true');
+      }
+    } catch (e) {}
+    this.isReady = false;
+    console.log('[X Desktop AI] Model process terminated. VRAM cleared.');
   }
 }
 

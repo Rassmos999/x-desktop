@@ -216,6 +216,15 @@ function createWindow(targetUrl = 'https://x.com') {
   // Global Keyboard Zoom & Dashboard Handlers
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.control && !input.alt && input.type === 'keyDown') {
+      // Quit and release all VRAM: Ctrl + Q
+      if (input.code === 'KeyQ') {
+        event.preventDefault();
+        app.isQuitting = true;
+        aiEngine.destroy();
+        app.quit();
+        return;
+      }
+
       // Open Web UI Dashboard: Ctrl + Shift + D
       if (input.shift && input.code === 'KeyD') {
         event.preventDefault();
@@ -293,19 +302,19 @@ function createWindow(targetUrl = 'https://x.com') {
 
     // AI Dashboard Link
     menu.append(new MenuItem({
-      label: '📊 فتح لوحة تحكم الذكاء الاصطناعي (Web UI)',
+      label: 'AI Telemetry Dashboard',
       accelerator: 'CmdOrCtrl+Shift+D',
       click: () => shell.openExternal(`http://localhost:${WEB_UI_PORT}`)
     }));
     menu.append(new MenuItem({
-      label: '🔑 مساعد تسجيل الدخول (Session Bridge)',
+      label: 'Session Assistant',
       click: () => openLoginAssistant()
     }));
     menu.append(new MenuItem({ type: 'separator' }));
 
     if (params.selectionText) {
       menu.append(new MenuItem({
-        label: '🌐 ترجمة النص بالذكاء الاصطناعي',
+        label: 'Translate Selection',
         click: async () => {
           const translated = await aiEngine.translate(params.selectionText, 'ar');
           mainWindow.webContents.send('show-toast-message', translated);
@@ -475,11 +484,11 @@ function createTray() {
       click: () => showAndFocusWindow()
     },
     {
-      label: 'AI Web Dashboard (لوحة التحكم)',
+      label: 'AI Telemetry Dashboard',
       click: () => shell.openExternal(`http://localhost:${WEB_UI_PORT}`)
     },
     {
-      label: 'Login Assistant (مساعد تسجيل الدخول)',
+      label: 'Session Assistant',
       click: () => openLoginAssistant()
     },
     {
@@ -650,7 +659,7 @@ function openLoginAssistant(authUrl = '') {
     resizable: false,
     minimizable: false,
     maximizable: false,
-    title: 'مساعد تسجيل الدخول (Session Bridge) - X Desktop',
+    title: 'X Desktop Session Assistant',
     icon: getIconPath(),
     backgroundColor: '#0a0c10',
     autoHideMenuBar: true,
@@ -661,10 +670,10 @@ function openLoginAssistant(authUrl = '') {
   });
 
   const htmlContent = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
-  <title>مساعد تسجيل الدخول - X Desktop</title>
+  <title>Session Assistant - X Desktop</title>
   <style>
     body {
       background: #0a0c10;
@@ -753,24 +762,24 @@ function openLoginAssistant(authUrl = '') {
   <div class="brand">
     <div class="logo">𝕏</div>
     <div>
-      <h2>مساعد تسجيل الدخول الذكي</h2>
-      <div style="font-size:12px; color:#64748b;">Session Bridge · المتصفح المعتمد</div>
+      <h2>Session Assistant</h2>
+      <div style="font-size:12px; color:#64748b;">Browser Session Bridge</div>
     </div>
   </div>
 
-  <p>نظراً لإجراءات أمان Google المشددة، يتم إتمام المصادقة بأمان داخل متصفحك اليومي (Chrome أو Edge أو Brave).</p>
+  <p>Google authentication requires a verified browser. Authenticate securely in your default browser, then sync your session token below.</p>
 
   <div class="card">
-    <div><span class="step-badge">الخطوة 1</span> <b>تسجيل الدخول في المتصفح</b></div>
-    <p>انقر لفتح حسابك في المتصفح المعتمد وإتمام المصادقة:</p>
-    <button class="btn btn-secondary" id="btnOpenBrowser">🌐 فتح X في المتصفح الافتراضي</button>
+    <div><span class="step-badge">Step 1</span> <b>Authenticate in Default Browser</b></div>
+    <p>Open X in your default system browser to complete sign in:</p>
+    <button class="btn btn-secondary" id="btnOpenBrowser">Open X in Default Browser</button>
   </div>
 
   <div class="card">
-    <div><span class="step-badge">الخطوة 2</span> <b>نقل الجلسة (auth_token)</b></div>
-    <p>الصق قيمة كوكيز <code>auth_token</code> أو الكوكيز كاملة ليتم تفعيل الحساب وحفظه فورياً:</p>
-    <input type="text" id="tokenInput" placeholder="الصق auth_token هنا..." />
-    <button class="btn btn-primary" id="btnApplyToken">تطبيق وتسجيل الدخول في X Desktop</button>
+    <div><span class="step-badge">Step 2</span> <b>Import Session Token</b></div>
+    <p>Paste your <code>auth_token</code> cookie value or complete cookie string below:</p>
+    <input type="text" id="tokenInput" placeholder="Paste auth_token value here..." />
+    <button class="btn btn-primary" id="btnApplyToken">Apply and Connect Session</button>
     <div id="statusMsg"></div>
   </div>
 
@@ -787,20 +796,20 @@ function openLoginAssistant(authUrl = '') {
       const msg = document.getElementById('statusMsg');
       if (!raw) {
         msg.style.color = '#f87171';
-        msg.textContent = 'الرجاء لصق كود الجلسة أو كوكيز auth_token أولاً.';
+        msg.textContent = 'Please paste your auth_token value first.';
         return;
       }
       msg.style.color = '#38bdf8';
-      msg.textContent = 'جاري حقن الجلسة وحفظها...';
+      msg.textContent = 'Injecting session and saving...';
 
       const res = await ipcRenderer.invoke('apply-session-token', raw);
       if (res && res.success) {
         msg.style.color = '#34d399';
-        msg.textContent = '✅ تم تسجيل الدخول بنجاح! تم تحديث التطبيق.';
+        msg.textContent = 'Session connected successfully! Reloading...';
         setTimeout(() => { window.close(); }, 1200);
       } else {
         msg.style.color = '#f87171';
-        msg.textContent = 'تعذر تطبيق الجلسة: ' + (res?.error || 'رمز غير صالح');
+        msg.textContent = 'Failed to apply session: ' + (res?.error || 'Invalid token');
       }
     });
   </script>

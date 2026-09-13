@@ -159,15 +159,15 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
 
   const isFast = (cacheObj.currentActiveMode === "auto") || (cacheObj.actualEngine === "precise" || cacheObj.actualEngine === "web");
   const initialText = (cacheObj.currentActiveMode === "auto" && cacheObj.cachedFastText) ? cacheObj.cachedFastText : cacheObj.cachedAiText;
-  const initialBadge = isFast ? "الترجمة السريعة" : "ترجمة الذكاء الاصطناعي";
-  const initialRephraseBtn = isFast ? "ترجمة الذكاء الاصطناعي" : "الترجمة السريعة";
+  const initialBadge = isFast ? "Fast Engine" : "AI Engine";
+  const initialRephraseBtn = isFast ? "Switch to AI" : "Switch to Fast";
 
   translationBox.innerHTML = `
       <div class="x-desktop-translation-meta">
         <span class="x-desktop-badge-text">${initialBadge}</span>
         <div style="display:flex;align-items:center;gap:10px;">
           <button class="x-desktop-show-original-link x-desktop-rephrase-ai">${initialRephraseBtn}</button>
-          <button class="x-desktop-show-original-link x-desktop-hide-translation">إخفاء</button>
+          <button class="x-desktop-show-original-link x-desktop-hide-translation">Hide</button>
         </div>
       </div>
     <div class="x-desktop-translated-text">${formatArabicBiDi(initialText)}</div>
@@ -187,21 +187,21 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
     if (nextMode === "auto" && cacheObj.cachedFastText) {
       cacheObj.currentActiveMode = "auto";
       textContainer.innerHTML = formatArabicBiDi(cacheObj.cachedFastText);
-      badgeText.textContent = "الترجمة السريعة";
-      rephraseBtn.innerHTML = "ترجمة الذكاء الاصطناعي";
+      badgeText.textContent = "Fast Engine";
+      rephraseBtn.innerHTML = "Switch to AI";
       rephraseBtn.disabled = false;
       return;
     }
     if (nextMode === "ai" && cacheObj.cachedAiText) {
       cacheObj.currentActiveMode = "ai";
       textContainer.innerHTML = formatArabicBiDi(cacheObj.cachedAiText);
-      badgeText.textContent = "ترجمة الذكاء الاصطناعي";
-      rephraseBtn.innerHTML = "الترجمة السريعة";
+      badgeText.textContent = "AI Engine";
+      rephraseBtn.innerHTML = "Switch to Fast";
       rephraseBtn.disabled = false;
       return;
     }
 
-    rephraseBtn.innerHTML = "جاري المعالجة...";
+    rephraseBtn.innerHTML = "Processing...";
     try {
       const latestText = getCleanTweetText(textEl) || cacheObj.fullOriginalText;
       const rephraseRes = await ipcRenderer.invoke("translate-text", { text: latestText, mode: nextMode });
@@ -220,10 +220,10 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
         cacheObj.currentActiveMode = "auto";
       }
 
-      badgeText.textContent = isActualFast ? "الترجمة السريعة" : "ترجمة الذكاء الاصطناعي";
-      rephraseBtn.innerHTML = isActualFast ? "ترجمة الذكاء الاصطناعي" : "الترجمة السريعة";
+      badgeText.textContent = isActualFast ? "Fast Engine" : "AI Engine";
+      rephraseBtn.innerHTML = isActualFast ? "Switch to AI" : "Switch to Fast";
     } catch (err) {
-      rephraseBtn.innerHTML = "تعذر التبديل";
+      rephraseBtn.innerHTML = "Failed to switch";
     } finally {
       rephraseBtn.disabled = false;
     }
@@ -236,7 +236,7 @@ function renderTranslationBox(tw, textEl, tweetKey, cacheObj, linkEl) {
     translationBox.remove();
     if (link) {
       link.style.display = "inline-block";
-      link.innerHTML = "ترجمة المنشور";
+      link.innerHTML = "Translate post";
       link.disabled = false;
     }
   });
@@ -283,7 +283,7 @@ function injectTranslateButtons() {
 
     const link = document.createElement("button");
     link.className = "x-desktop-translate-link";
-    link.innerHTML = "ترجمة المنشور";
+    link.innerHTML = "Translate post";
 
     link.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -322,7 +322,7 @@ function injectTranslateButtons() {
       const latestTextEl = tw.querySelector("[data-testid='tweetText']") || textEl;
       const fullOriginalText = getCleanTweetText(latestTextEl) || originalText;
 
-      link.innerHTML = "جاري الترجمة بالذكاء الاصطناعي...";
+      link.innerHTML = "Translating...";
       link.disabled = true;
 
       try {
@@ -343,7 +343,7 @@ function injectTranslateButtons() {
         renderTranslationBox(tw, textEl, tweetKey, cacheObj, link);
         link.style.display = "none";
       } catch (err) {
-        link.innerHTML = "تعذرت الترجمة";
+        link.innerHTML = "Translation unavailable";
         link.disabled = false;
       }
     });
@@ -365,7 +365,7 @@ function injectImageTranslateButtons() {
 
     const btn = document.createElement('button');
     btn.className = 'x-desktop-img-translate-btn';
-    btn.innerHTML = '🖼️ ترجمة النص داخل الصورة (Qwen3-VL)';
+    btn.innerHTML = 'Translate image text';
 
     let resultBox = null;
 
@@ -373,7 +373,7 @@ function injectImageTranslateButtons() {
       e.preventDefault();
       e.stopPropagation();
 
-      btn.innerHTML = '🔍 جاري فحص وترجمة الصورة بالذكاء الاصطناعي...';
+      btn.innerHTML = 'Analyzing image...';
       btn.disabled = true;
 
       try {
@@ -417,7 +417,7 @@ function injectImageTranslateButtons() {
             resultBox.innerHTML = `
               <div class="x-desktop-translation-meta">
                 <span>ترجمة النصوص المستخرجة من الصورة (Qwen3-VL · RTX 4060)</span>
-                <button class="x-desktop-show-original-link">إخفاء</button>
+                <button class="x-desktop-show-original-link">Hide</button>
               </div>
               <div class="x-desktop-translated-text">${formatArabicBiDi(translation)}</div>
             `;
@@ -426,7 +426,7 @@ function injectImageTranslateButtons() {
             hideBtn.addEventListener('click', (ev) => {
               ev.stopPropagation();
               resultBox.style.display = 'none';
-              btn.innerHTML = '🖼️ ترجمة النص داخل الصورة (Qwen3-VL)';
+              btn.innerHTML = 'Translate image text';
               btn.disabled = false;
             });
 
@@ -438,7 +438,7 @@ function injectImageTranslateButtons() {
 
         reader.readAsDataURL(blob);
       } catch (err) {
-        btn.innerHTML = '⚠️ تعذر فحص الصورة';
+        btn.innerHTML = 'Failed to analyze image';
         btn.disabled = false;
       }
     });
@@ -679,14 +679,14 @@ function showSelectionTooltip(rect, text) {
 
   tooltip.innerHTML = `
     <div class="x-tooltip-header">
-      <span class="x-tooltip-badge">ترجمة الذكاء الاصطناعي</span>
-      <button class="x-tooltip-mode-btn">التبديل للسريعة</button>
+      <span class="x-tooltip-badge">AI Translation</span>
+      <button class="x-tooltip-mode-btn">Switch to Fast</button>
     </div>
-    <div class="x-tooltip-result">جاري الترجمة...</div>
+    <div class="x-tooltip-result">Translating...</div>
     <div class="x-tooltip-actions">
-      <button class="x-tooltip-btn x-tooltip-btn-primary x-tooltip-replace-btn" title="استبدال الكلمة مكانها في التغريدة">استبدال مكانها</button>
-      <button class="x-tooltip-btn x-tooltip-copy-btn">نسخ</button>
-      <button class="x-tooltip-btn x-tooltip-close-btn">إغلاق</button>
+      <button class="x-tooltip-btn x-tooltip-btn-primary x-tooltip-replace-btn" title="Replace selected text inline">Replace in place</button>
+      <button class="x-tooltip-btn x-tooltip-copy-btn">Copy</button>
+      <button class="x-tooltip-btn x-tooltip-close-btn">Close</button>
     </div>
   `;
 
@@ -717,7 +717,7 @@ function showSelectionTooltip(rect, text) {
   const closeBtn = tooltip.querySelector('.x-tooltip-close-btn');
 
   async function fetchAndDisplay(mode) {
-    resultEl.textContent = 'جاري الترجمة...';
+    resultEl.textContent = 'Translating...';
     try {
       const res = await ipcRenderer.invoke('translate-text', { text, mode });
       const translated = typeof res === 'object' ? res.text : res;
@@ -725,15 +725,15 @@ function showSelectionTooltip(rect, text) {
       resultEl.innerHTML = formatArabicBiDi(translated);
       if (mode === 'ai') {
         translatedAi = translated;
-        badgeEl.textContent = 'ترجمة الذكاء الاصطناعي';
-        modeBtn.textContent = 'التبديل للسريعة';
+        badgeEl.textContent = 'AI Translation';
+        modeBtn.textContent = 'Switch to Fast';
       } else {
         translatedFast = translated;
-        badgeEl.textContent = 'الترجمة السريعة';
-        modeBtn.textContent = 'التبديل للذكاء الاصطناعي';
+        badgeEl.textContent = 'Fast Translation';
+        modeBtn.textContent = 'Switch to AI';
       }
     } catch (err) {
-      resultEl.textContent = 'تعذرت الترجمة';
+      resultEl.textContent = 'Translation unavailable';
     }
   }
 
@@ -744,15 +744,15 @@ function showSelectionTooltip(rect, text) {
     if (currentMode === 'auto' && translatedFast) {
       activeTranslation = translatedFast;
       resultEl.innerHTML = formatArabicBiDi(translatedFast);
-      badgeEl.textContent = 'الترجمة السريعة';
-      modeBtn.textContent = 'التبديل للذكاء الاصطناعي';
+      badgeEl.textContent = 'Fast Translation';
+      modeBtn.textContent = 'Switch to AI';
       return;
     }
     if (currentMode === 'ai' && translatedAi) {
       activeTranslation = translatedAi;
       resultEl.innerHTML = formatArabicBiDi(translatedAi);
-      badgeEl.textContent = 'ترجمة الذكاء الاصطناعي';
-      modeBtn.textContent = 'التبديل للسريعة';
+      badgeEl.textContent = 'AI Translation';
+      modeBtn.textContent = 'Switch to Fast';
       return;
     }
     fetchAndDisplay(currentMode);
@@ -761,8 +761,8 @@ function showSelectionTooltip(rect, text) {
   copyBtn.addEventListener('click', () => {
     if (activeTranslation) {
       navigator.clipboard.writeText(activeTranslation);
-      copyBtn.textContent = 'تم النسخ ✓';
-      setTimeout(() => { if (copyBtn) copyBtn.textContent = 'نسخ'; }, 1500);
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => { if (copyBtn) copyBtn.textContent = 'Copy'; }, 1500);
     }
   });
 
@@ -786,7 +786,7 @@ function showSelectionTooltip(rect, text) {
       bdi.className = 'x-desktop-replaced-text';
       bdi.dir = 'rtl';
       bdi.textContent = activeTranslation;
-      bdi.title = 'النص الأصلي: ' + text + ' (انقر للاستعادة)';
+      bdi.title = 'Original: ' + text + ' (Click to revert)';
 
       bdi.addEventListener('click', (ev) => {
         ev.stopPropagation();
@@ -803,8 +803,8 @@ function showSelectionTooltip(rect, text) {
       if (tw && textEl && !tw.querySelector('.x-desktop-restore-btn')) {
         const restoreBtn = document.createElement('button');
         restoreBtn.className = 'x-desktop-restore-btn';
-        restoreBtn.innerHTML = '↩ عودة للمنشور';
-        restoreBtn.title = 'استعادة المنشور بالكامل إلى لغته الأصلية';
+        restoreBtn.innerHTML = 'Revert to original';
+        restoreBtn.title = 'Revert post to original text';
         restoreBtn.addEventListener('click', (ev) => {
           ev.preventDefault();
           ev.stopPropagation();

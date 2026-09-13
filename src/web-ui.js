@@ -7,6 +7,7 @@ const { aiEngine } = require('./ai-engine');
 
 const WEB_UI_PORT = 28492;
 const DASHBOARD_HTML_PATH = path.join(__dirname, 'dashboard', 'index.html');
+const DOCS_HTML_PATH = path.join(__dirname, '..', 'docs', 'index.html');
 
 let serverInstance = null;
 
@@ -64,6 +65,19 @@ function startWebUiServer() {
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Dashboard asset missing: ' + err.message);
+      }
+      return;
+    }
+
+    // Serve Documentation Catalog
+    if (url.pathname === '/docs' || url.pathname === '/guide') {
+      try {
+        const docsHtml = fs.readFileSync(DOCS_HTML_PATH, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(docsHtml);
+      } catch (err) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Documentation catalog missing.');
       }
       return;
     }
