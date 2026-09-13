@@ -71,7 +71,7 @@ install: $(ELECTRON)/electron icons
 	  fi; \
 	done
 	@if [ ! -f $(DESTDIR)$(icontheme)/index.theme ]; then \
-	  cp /usr/share/icons/hicolor/index.theme $(DESTDIR)$(icontheme)/index.theme; \
+	  if [ -f /usr/share/icons/hicolor/index.theme ]; then cp /usr/share/icons/hicolor/index.theme $(DESTDIR)$(icontheme)/index.theme; fi; \
 	fi
 	@-update-desktop-database $(DESTDIR)$(appdir) 2>/dev/null || true
 	@-gtk-update-icon-cache -f -t $(DESTDIR)$(icontheme) 2>/dev/null || true

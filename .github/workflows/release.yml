@@ -107,7 +107,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/work" -w /work archlinux:base-devel bash -c "
             pacman -Syu --noconfirm &&
-            pacman -S --noconfirm nodejs npm librsvg python imagemagick git sudo &&
+            pacman -S --noconfirm nodejs npm librsvg python imagemagick git sudo hicolor-icon-theme &&
             useradd -m builder &&
             echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers &&
             chown -R builder:builder /work &&
