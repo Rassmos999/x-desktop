@@ -135,7 +135,10 @@ function startWebUiServer() {
     if (url.pathname === '/' || url.pathname === '/index.html') {
       try {
         const html = fs.readFileSync(DASHBOARD_HTML_PATH, 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        // No-store on the pages too, not just the stylesheet and script. These
+        // files change whenever the client is updated, and a cached copy means
+        // the user keeps seeing the previous UI after upgrading.
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(html);
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -149,7 +152,7 @@ function startWebUiServer() {
     if (url.pathname === '/docs' || url.pathname === '/docs/' || url.pathname === '/guide' || url.pathname === '/manual') {
       try {
         const manualHtml = fs.readFileSync(MANUAL_HTML_PATH, 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(manualHtml);
       } catch (err) {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -162,7 +165,7 @@ function startWebUiServer() {
     if (url.pathname === '/docs/ar' || url.pathname === '/docs/ar/' || url.pathname === '/manual/ar') {
       try {
         const manualAr = fs.readFileSync(MANUAL_AR_HTML_PATH, 'utf8');
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(manualAr);
       } catch (err) {
         res.writeHead(404, { 'Content-Type': 'text/plain' });

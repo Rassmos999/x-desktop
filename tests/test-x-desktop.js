@@ -132,6 +132,10 @@ assert(webUiCode.includes("const os = require('os')"), 'web-ui must require os f
 assert(webUiCode.includes('MANUAL_HTML_PATH'), 'web-ui must serve the manual');
 assert(webUiCode.includes('isOriginAllowed'), 'model endpoints must validate Origin');
 assert(webUiCode.includes('/api/models'), 'model inventory endpoint must exist');
+// Every HTML route must be no-store. Without it a browser serves the previous
+// dashboard after an upgrade, which reads to the user as "my fix did nothing".
+const htmlRouteCount = (webUiCode.match(/text\/html; charset=utf-8', 'Cache-Control': 'no-store'/g) || []).length;
+assert(htmlRouteCount >= 3, `all HTML routes need no-store (found ${htmlRouteCount})`);
 assert(fs.existsSync(path.join(ROOT, 'LICENSE')), 'LICENSE must exist');
 console.log('   ✅ Documentation, licence, and model API surface verified.');
 
