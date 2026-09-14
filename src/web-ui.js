@@ -147,9 +147,20 @@ function startWebUiServer() {
       return;
     }
 
+    // The manual's pages use document-relative links (the language switch, the
+    // stylesheets), so they only resolve correctly under a URL that ends in a
+    // slash. GitHub Pages serves the manual at /manual/ for exactly this
+    // reason; without the redirect the browser resolved "ar/" against "/" and
+    // asked for /ar/, which is not a route, and the user saw "Not found".
+    if (url.pathname === '/docs' || url.pathname === '/guide' || url.pathname === '/manual') {
+      res.writeHead(302, { 'Location': url.pathname + '/' });
+      res.end();
+      return;
+    }
+
     // Serve the user manual. The app links here directly: someone already
     // running the client needs the manual, not the public landing page.
-    if (url.pathname === '/docs' || url.pathname === '/docs/' || url.pathname === '/guide' || url.pathname === '/manual') {
+    if (url.pathname === '/docs/' || url.pathname === '/guide/' || url.pathname === '/manual/') {
       try {
         const manualHtml = fs.readFileSync(MANUAL_HTML_PATH, 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -161,8 +172,15 @@ function startWebUiServer() {
       return;
     }
 
-    // Arabic manual
-    if (url.pathname === '/docs/ar' || url.pathname === '/docs/ar/' || url.pathname === '/manual/ar') {
+    // Arabic manual. Same trailing-slash rule: its assets and its language
+    // switch are written relative to /docs/ar/, so the slash is load-bearing.
+    if (url.pathname === '/docs/ar' || url.pathname === '/manual/ar') {
+      res.writeHead(302, { 'Location': url.pathname + '/' });
+      res.end();
+      return;
+    }
+
+    if (url.pathname === '/docs/ar/' || url.pathname === '/manual/ar/') {
       try {
         const manualAr = fs.readFileSync(MANUAL_AR_HTML_PATH, 'utf8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -179,7 +197,11 @@ function startWebUiServer() {
     // from GitHub Pages; over HTTP the manual's /docs URL resolves assets to
     // /assets and its Arabic page to /docs/ar/../assets, so every prefix the
     // pages can produce is served, and nothing outside docs/ is reachable.
-    const ASSET_PREFIXES = ['/assets/', '/docs/assets/', '/docs/manual/assets/', '/docs/ar/assets/'];
+    // Every prefix the pages can now produce, given they are served under
+    // trailing-slash URLs: the manual's ../assets and the Arabic manual's
+    // ../../assets both resolve inside /docs/assets/. The bare /assets prefix
+    // stays for the favicon link on the dashboard origin.
+    const ASSET_PREFIXES = ['/docs/assets/', '/assets/'];
     const assetPrefix = ASSET_PREFIXES.find(p => url.pathname.startsWith(p));
     if (req.method === 'GET' && assetPrefix) {
       const rel = 'assets/' + url.pathname.slice(assetPrefix.length);

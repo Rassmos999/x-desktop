@@ -136,6 +136,12 @@ assert(webUiCode.includes('/api/models'), 'model inventory endpoint must exist')
 // dashboard after an upgrade, which reads to the user as "my fix did nothing".
 const htmlRouteCount = (webUiCode.match(/text\/html; charset=utf-8', 'Cache-Control': 'no-store'/g) || []).length;
 assert(htmlRouteCount >= 3, `all HTML routes need no-store (found ${htmlRouteCount})`);
+// The manual's pages use document-relative links, so they only resolve under a
+// URL ending in a slash. Serving them without one made the language switch ask
+// for /ar/ and return "Not found".
+assert(webUiCode.includes("url.pathname + '/'"), 'manual routes must redirect to their trailing-slash form');
+const dashHtml = fs.readFileSync(path.join(ROOT, 'src', 'dashboard', 'index.html'), 'utf8');
+assert(dashHtml.includes('href="/docs/"'), 'the dashboard must link to the manual with its trailing slash');
 assert(fs.existsSync(path.join(ROOT, 'LICENSE')), 'LICENSE must exist');
 console.log('   ✅ Documentation, licence, and model API surface verified.');
 
