@@ -209,11 +209,23 @@ function startWebUiServer() {
     if (url.pathname === '/api/telemetry') {
       const gpu = getGpuStats();
       const telemetry = aiEngine.getTelemetry();
+      // The in-process flag can lag reality: the engine may already be serving
+      // on 28491 while this process has not observed it yet. A live health
+      // check keeps the dashboard from reporting a healthy engine as stopped.
+      let engineState = telemetry.engineState;
+      if (engineState === 'offline') {
+        const alive = await aiEngine.ping();
+        if (alive) {
+          aiEngine.isReady = true;
+          engineState = 'ready';
+        }
+      }
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({
         activeModel: getActiveModelName(),
         activeModelFile: telemetry.activeModel || null,
-        engineState: telemetry.engineState || 'offline',
+        engineState: engineState || 'offline',
+        visionAvailable: aiEngine.hasVision(),
         vramUsed: gpu.used,
         vramTotal: gpu.total,
         gpuTemp: gpu.temp,

@@ -20,6 +20,17 @@ colors:
   bad-ink: "#e08a80"
   action: "#1d9bf0"
   action-deep: "#1a8cd8"
+  # Segments in the dashboard's context gauge. Chosen to sit at equal apparent
+  # weight against the panel, since they are read as a partition of one bar.
+  seg-sys: "#4a6fa5"
+  seg-in: "#3f8fae"
+  seg-out: "#5f8a63"
+  # The one pure white in the system: the primary button's label on X-blue,
+  # where the warm cream would lose contrast against the blue.
+  on-action: "#ffffff"
+  # Scrollbar thumb. A warmer, lighter step of the ground so the browser's own
+  # furniture belongs to the palette instead of defaulting to system gray.
+  scroll-thumb: "#3a322a"
 typography:
   display:
     fontFamily: '"Bodoni Moda", "Amiri", Georgia, serif'
@@ -42,6 +53,21 @@ typography:
     fontFamily: '"JetBrains Mono", ui-monospace, monospace'
     fontWeight: 500
     lineHeight: 1.8
+  # Documented ramp. Marketing surfaces (landing, manual) run the wide end:
+  # 10 label, 12 meta, 13.5 small, 15 body, 17.5 lead. The dashboard (Operate)
+  # runs the narrow end because it carries far more type per screen, plus two
+  # steps the marketing surfaces never need: 22 for a panel heading and 19-22
+  # for a measured readout, which is the one number the operator reads first.
+  scale:
+    micro: "10px"     # mono labels, units
+    meta: "12px"      # timestamps, captions, secondary status
+    small: "13px"     # dense table and control text
+    body: "15px"      # prose and form text
+    lead: "17.5px"    # manual intro, landing lede
+    readout: "22px"   # dashboard: measured value
+    heading-sm: "22px"  # dashboard: panel heading in the display face
+    heading: "clamp(25px, 2.9vw, 38px)"   # manual section heading
+    display: "clamp(38px, 6.1vw, 82px)"   # landing statement
 rounded:
   panel: "0px"
   control: "0px"
@@ -115,4 +141,3 @@ and the landing hero's specification strip wraps.
 
 There is no shadow anywhere. Depth is a hairline border plus a darker fill for wells. Corners
 are square: this world has no rounded panels and no pills.
-

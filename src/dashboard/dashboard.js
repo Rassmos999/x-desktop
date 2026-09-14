@@ -104,12 +104,14 @@
       var tr = document.createElement('tr');
       var tdE = document.createElement('td');
       var isAi = (item.engine || '').indexOf('AI') !== -1;
-      tdE.appendChild(tag(isAi ? 'AI' : 'FAST', isAi ? 'pill-ai' : 'pill-fast'));
+      // Same words the manual uses for the two engines, so a reader who checked
+      // the manual recognises the tag here.
+      tdE.appendChild(tag(isAi ? 'ذكاء' : 'سريع', isAi ? 'pill-ai' : 'pill-fast'));
       var tdT = document.createElement('td');
       tdT.textContent = item.translated || '';
       var tdM = document.createElement('td');
       tdM.className = 'tm ltr';
-      tdM.textContent = (item.timestamp || '') + ' · ' + (item.tokens || 0) + 'tk';
+      tdM.textContent = (item.timestamp || '') + ' · ' + (item.tokens || 0) + ' رمز';
       tr.appendChild(tdE); tr.appendChild(tdT); tr.appendChild(tdM);
       tb.appendChild(tr);
     });
@@ -118,19 +120,48 @@
     els.feedCount.textContent = history.length + ' عملية';
   }
 
-  function setRoutes(routes) {
+  function renderRoutes(routes) {
     while (els.routes.firstChild) els.routes.removeChild(els.routes.firstChild);
-    routes.forEach(function (r) {
+    (routes || []).forEach(function (r) {
       var li = document.createElement('li');
       var code = document.createElement('code');
       code.className = 'ltr';
       code.textContent = r.path;
       var st = document.createElement('span');
-      st.className = 'st ' + (r.state === 'ok' ? 'st-ok' : 'st-idle');
+      st.className = 'st st-' + (r.state || 'idle');
       st.textContent = r.label;
       li.appendChild(code); li.appendChild(st);
       els.routes.appendChild(li);
     });
+  }
+
+  function setRoutes(data) { renderRoutes(routeRows(data)); }
+
+  // The routes panel reports what the server actually told us, including
+  // whether image translation is available at all. Claiming a route is live
+  // when no vision model is loaded would send the reader chasing a bug.
+  function routeRows(data) {
+    if (!data) {
+      return [
+        { path: '/api/telemetry', state: 'bad', label: 'لا اتصال' },
+        { path: '/api/translate', state: 'bad', label: 'لا اتصال' },
+        { path: '/api/translate-image', state: 'bad', label: 'لا اتصال' }
+      ];
+    }
+    return [
+      { path: '/api/telemetry', state: 'ok', label: '200' },
+      { path: '/api/translate', state: 'ok', label: '200' },
+      data.visionAvailable
+        ? { path: '/api/translate-image', state: 'ok', label: '200' }
+        : { path: '/api/translate-image', state: 'idle', label: 'غير مفعّل' }
+    ];
+  }
+
+  function setLegend(sys, inp, out, free) {
+    $('legendSys').textContent = sys;
+    $('legendIn').textContent = inp;
+    $('legendOut').textContent = out;
+    $('legendFree').textContent = free;
   }
 
   function applyTelemetry(data) {
@@ -139,14 +170,16 @@
     var state = data.engineState || (data.isReady === false ? 'offline' : 'ready');
     if (switching || state === 'switching' || state === 'starting') {
       setRail('warn', 'جارٍ تبديل الموديل');
-      els.railModel.textContent = (data.activeModelFile || data.activeModel || '—') + ' · ' +
-        (state === 'switching' ? 'SWITCHING' : 'LOADING');
+      els.railModel.textContent = (data.activeModelFile || data.activeModel || '—') +
+        (state === 'switching' ? ' · يُبدَّل' : ' · يُحمَّل');
     } else if (state === 'ready') {
       setRail('ok', 'المحرك يعمل');
-      if (data.activeModel) els.railModel.textContent = data.activeModel + ' · SLOT 0 · NOMINAL';
+      if (data.activeModelFile || data.activeModel) {
+        els.railModel.textContent = (data.activeModelFile || data.activeModel) + ' · جاهز';
+      }
     } else {
       setRail('warn', 'المحرك متوقف');
-      els.railModel.textContent = (data.activeModel || 'لا موديل') + ' · OFFLINE';
+      els.railModel.textContent = (data.activeModelFile || data.activeModel || 'لا موديل') + ' · متوقف';
     }
     // Model-panel status follows the engine only when that state actually
     // changes, so it never overwrites a fresh switch result with chatter.
@@ -165,7 +198,7 @@
     els.tokens.textContent = (data.totalTokens || 0).toLocaleString('en-US');
     els.reqs.textContent = '/ ' + (data.requestCount || 0);
     els.cache.textContent = num(data.cacheSize);
-    els.cacheSub.textContent = '· ' + (data.cacheHits || 0) + ' hit';
+    els.cacheSub.textContent = '· ' + (data.cacheHits || 0) + ' إصابة';
 
     // Unmeasured means unmeasured: show "--" and an inert bar instead of a
     // plausible-looking number.
@@ -176,14 +209,9 @@
       els.barIn.style.width = '0%';
       els.barOut.style.width = '0%';
       els.barFree.style.width = '100%';
-      $('tankLegend').textContent = 'SYS — · IN — · OUT —';
-      $('tankFree').textContent = 'شاغر —';
-      els.ctxUtil.textContent = 'لم تُقس بعد — شغّل ترجمة لعرض التخصيص.';
-      setRoutes([
-        { path: '/api/telemetry', state: 'ok', label: '200' },
-        { path: '/api/translate', state: 'ok', label: '200' },
-        { path: '/api/translate-image', state: 'warn', label: 'IDLE' }
-      ]);
+      setLegend('—', '—', '—', '—');
+      els.ctxUtil.textContent = 'لم تُقس بعد';
+      setRoutes(data);
       if (Array.isArray(data.history)) renderFeed(data.history);
       return;
     }
@@ -192,26 +220,20 @@
     var free = Math.max(0, total - used);
     var pct = function (v) { return ((v / total) * 100).toFixed(1) + '%'; };
     els.barSys.style.width = pct(sys);
-    els.barSys.textContent = '';
     els.barSys.setAttribute('aria-label', 'تعليمات النظام: ' + sys + ' توكن');
     els.barIn.style.width = pct(inp);
-    els.barIn.textContent = '';
     els.barIn.setAttribute('aria-label', 'نص الدخل: ' + inp + ' توكن');
     els.barOut.style.width = pct(out);
-    els.barOut.textContent = '';
     els.barOut.setAttribute('aria-label', 'مساحة التوليد: ' + out + ' توكن');
     els.barFree.style.width = pct(free);
-    els.barFree.textContent = '';
-    $('tankLegend').textContent = 'SYS ' + sys + ' · IN ' + inp + ' · OUT ' + out;
-    $('tankFree').textContent = 'شاغر ' + ((free / total) * 100).toFixed(1) + '%';
-    els.ctxUtil.textContent = 'مستخدم ' + used.toLocaleString('en-US') + ' / ' + total.toLocaleString('en-US') +
+    // The legend carries the numbers, because a two-pixel segment cannot hold
+    // its own label and the reader needs the value, not the colour.
+    setLegend(sys.toLocaleString('en-US'), inp.toLocaleString('en-US'),
+      out.toLocaleString('en-US'), ((free / total) * 100).toFixed(1) + '%');
+    els.ctxUtil.textContent = used.toLocaleString('en-US') + ' / ' + total.toLocaleString('en-US') +
       ' (' + ((used / total) * 100).toFixed(1) + '%)';
 
-    setRoutes([
-      { path: '/api/telemetry', state: 'ok', label: '200' },
-      { path: '/api/translate', state: 'ok', label: '200' },
-      { path: '/api/translate-image', state: 'idle', label: 'IDLE' }
-    ]);
+    setRoutes(data);
 
     if (Array.isArray(data.history)) renderFeed(data.history);
   }
@@ -222,17 +244,15 @@
     // claiming the connection dropped.
     if (switching) {
       setRail('warn', 'جارٍ تبديل الموديل');
-      els.railModel.textContent = 'إعادة توزيع الذاكرة · LOADING';
+      els.railModel.textContent = 'إعادة توزيع الذاكرة على كرت الرسوم…';
       return;
     }
     setRail('bad', 'انقطع الاتصال');
-    els.railModel.textContent = 'لا رد من :28492 · OFFLINE';
+    els.railModel.textContent = 'لا رد من المنفذ 28492';
     setModelState('bad', 'لا رد من لوحة التحكم على المنفذ 28492.', false);
-    setRoutes([
-      { path: '/api/telemetry', state: 'idle', label: 'لا اتصال' },
-      { path: '/api/translate', state: 'idle', label: 'لا اتصال' },
-      { path: '/api/translate-image', state: 'idle', label: 'لا اتصال' }
-    ]);
+    setLegend('—', '—', '—', '—');
+    els.ctxUtil.textContent = 'لا اتصال';
+    setRoutes(null);
   }
 
   function fetchTelemetry() {
@@ -282,11 +302,16 @@
     }).then(function (data) {
       var ms = Date.now() - t0;
       var text = (data.translation && typeof data.translation === 'object') ? data.translation.text : data.translation;
-      els.result.textContent = text || 'تعذرت الترجمة — لا ناتج من المحرك.';
+      var engine = (data.translation && typeof data.translation === 'object') ? data.translation.engine : null;
+      els.result.textContent = text || 'لم يُرجع المحرك ناتجاً. جرّب المحرك الآخر أو تحقق من اللوحة أعلاه.';
       if (!text) els.result.setAttribute('data-tone', 'error');
       els.result.setAttribute('data-fresh', 'true');
       setTimeout(function () { els.result.removeAttribute('data-fresh'); }, 600);
       els.latency.textContent = 'زمن الاستجابة: ' + ms + 'ms';
+      // Name the engine that actually answered. A request started on the local
+      // engine can complete in the cloud, so the label is the honest signal.
+      els.resultHint.textContent = engineName(engine, mode);
+      els.result.focus();
       fetchTelemetry();
     }).catch(function () {
       els.result.textContent = 'خطأ في الاتصال بالمحرك المحلي.';
@@ -297,6 +322,18 @@
 
   els.btnAi.addEventListener('click', function () { executeTranslation('ai'); });
   els.btnFast.addEventListener('click', function () { executeTranslation('auto'); });
+
+  // The engine names the client emits: 'gemma4' for local inference, 'precise'
+  // for the cloud path, 'web' when neither produced anything.
+  function engineName(engine, requestedMode) {
+    if (engine === 'gemma4') return 'أجاب: محرك الذكاء المحلي على كرت الرسوم (لم يخرج النص من جهازك).';
+    if (engine === 'precise' || engine === 'web') {
+      return requestedMode === 'ai'
+        ? 'أجاب: المحرك السريع — تعذّر على الموديل المحلي إنتاج ناتج، فأُكمل الطلب سحابياً.'
+        : 'أجاب: المحرك السريع (طلب سحابي إلى Google).';
+    }
+    return '';
+  }
 
   // --- Model panel ---------------------------------------------------------
 
@@ -329,7 +366,7 @@
           els.modelSelect.appendChild(opt);
         });
 
-        els.modelsCount.textContent = data.models.length + ' MODELS';
+        els.modelsCount.textContent = data.models.length + ' موديل';
         els.modelSelect.disabled = false;
         els.btnSwitch.disabled = false;
         els.modelHint.textContent = data.visionAvailable
@@ -361,7 +398,7 @@
     els.modelLatency.textContent = '';
     setModelState('warn', 'جارٍ تبديل الموديل وتفريغ الذاكرة…', true);
     setRail('warn', 'جارٍ تبديل الموديل');
-    els.railModel.textContent = file + ' · SWITCHING';
+    els.railModel.textContent = file + ' · يُبدَّل';
 
     fetch('/api/models/active', {
       method: 'POST',
@@ -377,7 +414,7 @@
         lastEngineState = 'ready';
         setRail('ok', 'المحرك يعمل');
         els.modelLatency.textContent = 'زمن التبديل: ' + (ms / 1000).toFixed(1) + 's';
-        els.railModel.textContent = (r.body.activeModel || file) + ' · SLOT 0 · NOMINAL';
+        els.railModel.textContent = (r.body.activeModel || file) + ' · جاهز';
       } else {
         setModelState('bad', 'فشل تبديل الموديل: ' + (r.body.error || 'خطأ غير معروف.'), false);
         lastEngineState = null;
